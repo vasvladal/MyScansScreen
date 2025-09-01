@@ -55,7 +55,7 @@ object ScanManager {
     }
 
     /**
-     * Create a temporary URI for camera capture
+     * Create a temporary URI for camera capture - IMPROVED VERSION
      */
     fun createTempImageUri(context: Context): Uri? {
         return try {
@@ -63,12 +63,29 @@ object ScanManager {
             val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
             val imageFile = File(tempDir, "TEMP_$timeStamp.jpg")
 
-            FileProvider.getUriForFile(
+            // Ensure parent directory exists
+            imageFile.parentFile?.mkdirs()
+
+            // Create empty file if it doesn't exist
+            if (!imageFile.exists()) {
+                imageFile.createNewFile()
+            }
+
+            val uri = FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
                 imageFile
             )
+
+            // Debug logging
+            println("DEBUG: Created temp URI: $uri")
+            println("DEBUG: File path: ${imageFile.absolutePath}")
+            println("DEBUG: File exists: ${imageFile.exists()}")
+            println("DEBUG: File can write: ${imageFile.canWrite()}")
+
+            uri
         } catch (e: Exception) {
+            println("DEBUG: Error creating temp URI: ${e.message}")
             e.printStackTrace()
             null
         }
@@ -166,11 +183,28 @@ object ScanManager {
             val tempDir = getTempDirectory(context)
             tempDir.listFiles()?.forEach { file ->
                 if (file.isFile && file.name.startsWith("TEMP_")) {
-                    file.delete()
+                    // Only delete files older than 1 hour
+                    if (System.currentTimeMillis() - file.lastModified() > 3600000) {
+                        file.delete()
+                    }
                 }
             }
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    /**
+     * Check if a URI points to a valid image file
+     */
+    fun isValidImageUri(context: Context, uri: Uri): Boolean {
+        return try {
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                val bitmap = BitmapFactory.decodeStream(inputStream)
+                bitmap != null
+            } ?: false
+        } catch (e: Exception) {
+            false
         }
     }
 }

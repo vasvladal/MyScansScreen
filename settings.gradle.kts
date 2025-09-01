@@ -16,9 +16,9 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { url = uri("https://jitpack.io") } // ✅ CRITICAL: Add JitPack for Krop library
     }
 }
 
 rootProject.name = "My Scans screen"
 include(":app")
- 
