@@ -1,18 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- File: app/src/main/res/xml/file_paths.xml -->
-<paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- External files path for scans -->
-    <external-files-path name="external_files" path="." />
-
-    <!-- Cache directory for temporary files -->
-    <cache-path name="cache" path="." />
-
-    <!-- External cache directory -->
-    <external-cache-path name="external_cache" path="." />
-
-    <!-- Pictures directory -->
-    <external-files-path name="pictures" path="Pictures" />
-
-    <!-- Temp directory for camera captures -->
-    <cache-path name="temp" path="temp" />
+<paths>
+<cache-path name="temp" path="temp/" />
+<external-files-path name="scans" path="DocumentScans/" />
 </paths>

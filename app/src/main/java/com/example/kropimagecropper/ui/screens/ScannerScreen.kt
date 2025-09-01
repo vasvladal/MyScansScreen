@@ -6,11 +6,12 @@ import android.Manifest
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
-import android.widget.Toast
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -65,6 +66,8 @@ fun ScannerScreen(onDone: () -> Unit) {
     var showSaveSuccess by remember { mutableStateOf(false) }
     var saveError by remember { mutableStateOf<String?>(null) }
     var saveLocation by remember { mutableStateOf<String?>(null) }
+    var isProcessing by remember { mutableStateOf(false) }
+    var cameraCaptureUri by remember { mutableStateOf<Uri?>(null) }
 
     // Krop image cropper
     val imageCropper = rememberImageCropper()
@@ -86,6 +89,8 @@ fun ScannerScreen(onDone: () -> Unit) {
             Manifest.permission.READ_EXTERNAL_STORAGE
         }
     )
+
+    // Storage permission for legacy Android versions
     val writePermissionState = rememberPermissionState(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             Manifest.permission.READ_MEDIA_IMAGES
@@ -98,19 +103,31 @@ fun ScannerScreen(onDone: () -> Unit) {
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        selectedImageUri = uri
+        if (uri != null) {
+            selectedImageUri = uri
+        } else {
+            saveError = "No image selected"
+            scope.launch {
+                kotlinx.coroutines.delay(3000)
+                saveError = null
+            }
+        }
     }
 
-    // Camera launcher
+    // Camera launcher with improved error handling
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success: Boolean ->
-        if (success && selectedImageUri != null) {
-            // Image captured successfully, trigger cropping
-            // The LaunchedEffect will handle the cropping automatically
+        if (success && cameraCaptureUri != null) {
+            // Image captured successfully
+            Log.d("ScannerScreen", "Camera capture successful, URI: $cameraCaptureUri")
+            selectedImageUri = cameraCaptureUri
         } else {
             // Camera capture failed or cancelled
+            Log.e("ScannerScreen", "Camera capture failed or cancelled, success: $success")
             selectedImageUri = null
+            cameraCaptureUri = null
+            isProcessing = false
             if (!success) {
                 saveError = "Camera capture failed or was cancelled"
                 scope.launch {
@@ -121,64 +138,110 @@ fun ScannerScreen(onDone: () -> Unit) {
         }
     }
 
-    // Handle permission request result for gallery
-    LaunchedEffect(readPermissionState.status) {
-        if (readPermissionState.status.isGranted && selectedImageUri != null) {
-            // Permission granted, proceed with gallery selection if needed
-        }
-    }
-
     // Convert ImageBitmap to Android Bitmap
     fun imageBitmapToBitmap(imageBitmap: ImageBitmap): Bitmap {
         return imageBitmap.asAndroidBitmap().copy(Bitmap.Config.ARGB_8888, true)
     }
 
-    // Save image to scans folder and gallery
+    // Save image to scans folder using ScanManager
+//    fun saveImageToScans() {
+//        scope.launch {
+//            try {
+//                isProcessing = true
+//                croppedImage?.let { imageBitmap ->
+//                    withContext(Dispatchers.IO) {
+//                        // Convert to Android bitmap
+//                        val bitmap = imageBitmapToBitmap(imageBitmap)
+//
+//                        // Create a temporary file to pass to ScanManager
+//                        val tempDir = context.cacheDir
+//                        val tempFile = File.createTempFile("temp_scan_", ".jpg", tempDir)
+//
+//                        // Save bitmap to temporary file
+//                        FileOutputStream(tempFile).use { outputStream ->
+//                            if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 95, outputStream)) {
+//                                throw Exception("Failed to compress image")
+//                            }
+//                        }
+//
+//                        // Use ScanManager to save the image
+//                        val success = ScanManager.saveCroppedImage(
+//                            context,
+//                            Uri.fromFile(tempFile)
+//                        )
+//
+//                        // Clean up temp file
+//                        tempFile.delete()
+//
+//                        withContext(Dispatchers.Main) {
+//                            isProcessing = false
+//                            if (success) {
+//                                showSaveSuccess = true
+//                                scope.launch {
+//                                    kotlinx.coroutines.delay(3000)
+//                                    showSaveSuccess = false
+//                                    onDone() // Navigate back to scans list after successful save
+//                                }
+//                            } else {
+//                                saveError = saveFailedText
+//                                scope.launch {
+//                                    kotlinx.coroutines.delay(3000)
+//                                    saveError = null
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//            } catch (e: Exception) {
+//                withContext(Dispatchers.Main) {
+//                    isProcessing = false
+//                    saveError = "${saveFailedText}: ${e.message ?: ""}"
+//                    scope.launch {
+//                        kotlinx.coroutines.delay(3000)
+//                        saveError = null
+//                    }
+//                }
+//            }
+//        }
+//    }
+
+
+    // Save image to scans folder using ScanManager
     fun saveImageToScans() {
         scope.launch {
             try {
+                isProcessing = true
                 croppedImage?.let { imageBitmap ->
                     withContext(Dispatchers.IO) {
-                        val bitmap = imageBitmapToBitmap(imageBitmap)
+                        // Convert to Android bitmap
+                        val bitmap = imageBitmap.asAndroidBitmap()
 
-                        // Create scans directory
-                        val scansDir = ScanManager.getScansDirectory(context)
-
-                        // Save to app scans folder
-                        val fileName = "Scan_${System.currentTimeMillis()}.jpg"
-                        val scanFile = File(scansDir, fileName)
-
-                        FileOutputStream(scanFile).use { outputStream ->
-                            if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 95, outputStream)) {
-                                throw Exception("Failed to save scan")
-                            }
-                        }
-
-                        // Save to gallery
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                            saveImageToGalleryQ(bitmap, context, failedToCompressBitmap)
-                        } else {
-                            if (writePermissionState.status.isGranted) {
-                                saveImageToGalleryLegacy(bitmap, context, failedToCompressBitmap)
-                            } else {
-                                throw Exception(storagePermissionRequired)
-                            }
-                        }
+                        // Use ScanManager to save the image
+                        val success = ScanManager.saveCroppedImage(context, bitmap)
 
                         withContext(Dispatchers.Main) {
-                            saveLocation = scanFile.absolutePath
-                            showSaveSuccess = true
-                            scope.launch {
-                                kotlinx.coroutines.delay(3000)
-                                showSaveSuccess = false
-                                saveLocation = null
+                            isProcessing = false
+                            if (success) {
+                                showSaveSuccess = true
+                                scope.launch {
+                                    kotlinx.coroutines.delay(3000)
+                                    showSaveSuccess = false
+                                    onDone() // Navigate back to scans list after successful save
+                                }
+                            } else {
+                                saveError = saveFailedText
+                                scope.launch {
+                                    kotlinx.coroutines.delay(3000)
+                                    saveError = null
+                                }
                             }
                         }
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    saveError = "Save failed: ${e.message ?: ""}"
+                    isProcessing = false
+                    saveError = "${saveFailedText}: ${e.message ?: ""}"
                     scope.launch {
                         kotlinx.coroutines.delay(3000)
                         saveError = null
@@ -192,21 +255,29 @@ fun ScannerScreen(onDone: () -> Unit) {
     LaunchedEffect(selectedImageUri) {
         selectedImageUri?.let { uri ->
             try {
-                // Add some logging to see what's happening
-                println("DEBUG: Starting crop for URI: $uri")
+                isProcessing = true
+                Log.d("ScannerScreen", "Starting crop for URI: $uri")
+
+                // Use the Krop library's built-in URI handling
                 when (val result = imageCropper.crop(uri, context)) {
                     is CropResult.Success -> {
-                        println("DEBUG: Crop successful")
+                        Log.d("ScannerScreen", "Crop successful")
                         croppedImage = result.bitmap
                         selectedImageUri = null
+                        cameraCaptureUri = null
+                        isProcessing = false
                     }
                     is CropResult.Cancelled -> {
-                        println("DEBUG: Crop cancelled")
+                        Log.d("ScannerScreen", "Crop cancelled")
                         selectedImageUri = null
+                        cameraCaptureUri = null
+                        isProcessing = false
                     }
                     is CropError -> {
-                        println("DEBUG: Crop error occurred")
+                        Log.e("ScannerScreen", "Crop error occurred")
                         selectedImageUri = null
+                        cameraCaptureUri = null
+                        isProcessing = false
                         saveError = "Crop operation failed. Please try again."
                         scope.launch {
                             kotlinx.coroutines.delay(5000)
@@ -215,8 +286,10 @@ fun ScannerScreen(onDone: () -> Unit) {
                     }
                 }
             } catch (e: Exception) {
-                println("DEBUG: Exception during crop: ${e.message}")
+                Log.e("ScannerScreen", "Exception during crop: ${e.message}")
                 selectedImageUri = null
+                cameraCaptureUri = null
+                isProcessing = false
                 saveError = "Crop error: ${e.message}"
                 scope.launch {
                     kotlinx.coroutines.delay(5000)
@@ -259,7 +332,7 @@ fun ScannerScreen(onDone: () -> Unit) {
                 }
 
                 // Loading indicator
-                imageCropper.loadingStatus?.let { status ->
+                if (isProcessing || imageCropper.loadingStatus != null) {
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -273,9 +346,10 @@ fun ScannerScreen(onDone: () -> Unit) {
                             CircularProgressIndicator()
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = when (status) {
+                                text = when (imageCropper.loadingStatus) {
                                     CropperLoading.PreparingImage -> "Loading image..."
                                     CropperLoading.SavingResult -> "Processing crop..."
+                                    else -> "Processing..."
                                 },
                                 style = MaterialTheme.typography.bodyLarge
                             )
@@ -370,20 +444,59 @@ fun ScannerScreen(onDone: () -> Unit) {
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Button(
-                                    onClick = { saveImageToScans() },
+                                    onClick = {
+                                        // Check if we have storage permission before saving
+                                        val hasPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                            readPermissionState.status.isGranted
+                                        } else {
+                                            writePermissionState.status.isGranted
+                                        }
+
+                                        if (hasPermission) {
+                                            saveImageToScans()
+                                        } else {
+                                            // Request the appropriate permission
+                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                                readPermissionState.launchPermissionRequest()
+                                            } else {
+                                                writePermissionState.launchPermissionRequest()
+                                            }
+
+                                            // Show a message about needing permission
+                                            saveError = "Storage permission is required to save scans"
+                                            scope.launch {
+                                                kotlinx.coroutines.delay(3000)
+                                                saveError = null
+                                            }
+                                        }
+                                    },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(56.dp),
+                                    enabled = !isProcessing,
                                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                                 ) {
-                                    Icon(Icons.Default.Save, null, Modifier.size(20.dp))
+                                    if (isProcessing) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(20.dp),
+                                            color = MaterialTheme.colorScheme.onPrimary,
+                                            strokeWidth = 2.dp
+                                        )
+                                    } else {
+                                        Icon(Icons.Default.Save, null, Modifier.size(20.dp))
+                                    }
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text("Save as Scan", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                                 }
 
                                 OutlinedButton(
-                                    onClick = { croppedImage = null },
-                                    modifier = Modifier.fillMaxWidth()
+                                    onClick = {
+                                        croppedImage = null
+                                        selectedImageUri = null
+                                        cameraCaptureUri = null
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    enabled = !isProcessing
                                 ) {
                                     Icon(Icons.Default.Refresh, null, Modifier.size(20.dp))
                                     Spacer(modifier = Modifier.width(8.dp))
@@ -392,7 +505,8 @@ fun ScannerScreen(onDone: () -> Unit) {
 
                                 OutlinedButton(
                                     onClick = { onDone() },
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier.fillMaxWidth(),
+                                    enabled = !isProcessing
                                 ) {
                                     Icon(Icons.Default.Folder, null, Modifier.size(20.dp))
                                     Spacer(modifier = Modifier.width(8.dp))
@@ -451,14 +565,16 @@ fun ScannerScreen(onDone: () -> Unit) {
                                     when {
                                         cameraPermission.status.isGranted -> {
                                             try {
-                                                println("DEBUG: Camera permission granted, creating temp URI")
+                                                Log.d("ScannerScreen", "Camera permission granted, creating temp URI")
                                                 val tempUri = ScanManager.createTempImageUri(context)
                                                 if (tempUri != null) {
-                                                    println("DEBUG: Temp URI created: $tempUri")
-                                                    selectedImageUri = tempUri
+                                                    Log.d("ScannerScreen", "Temp URI created: $tempUri")
+                                                    cameraCaptureUri = tempUri
+                                                    isProcessing = true
+
                                                     cameraLauncher.launch(tempUri)
                                                 } else {
-                                                    println("DEBUG: Failed to create temp URI")
+                                                    Log.e("ScannerScreen", "Failed to create temp URI")
                                                     saveError = "Failed to create temporary file"
                                                     scope.launch {
                                                         kotlinx.coroutines.delay(3000)
@@ -466,7 +582,7 @@ fun ScannerScreen(onDone: () -> Unit) {
                                                     }
                                                 }
                                             } catch (e: Exception) {
-                                                println("DEBUG: Exception in camera button: ${e.message}")
+                                                Log.e("ScannerScreen", "Exception in camera button: ${e.message}")
                                                 saveError = "Camera error: ${e.message}"
                                                 scope.launch {
                                                     kotlinx.coroutines.delay(3000)
@@ -475,7 +591,7 @@ fun ScannerScreen(onDone: () -> Unit) {
                                             }
                                         }
                                         else -> {
-                                            println("DEBUG: Requesting camera permission")
+                                            Log.d("ScannerScreen", "Requesting camera permission")
                                             cameraPermission.launchPermissionRequest()
                                         }
                                     }
@@ -483,6 +599,7 @@ fun ScannerScreen(onDone: () -> Unit) {
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(56.dp),
+                                enabled = !isProcessing,
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                             ) {
                                 Icon(Icons.Default.CameraAlt, null, Modifier.size(20.dp))
@@ -512,7 +629,8 @@ fun ScannerScreen(onDone: () -> Unit) {
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(56.dp)
+                                    .height(56.dp),
+                                enabled = !isProcessing
                             ) {
                                 Icon(Icons.Default.PhotoLibrary, null, Modifier.size(20.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
@@ -568,59 +686,3 @@ fun createKropStyle() = cropperStyle(
         width = 1.5.dp
     )
 )
-
-// Gallery save functions
-suspend fun saveImageToGalleryQ(bitmap: Bitmap, context: Context, errorMessage: String): Uri? = withContext(Dispatchers.IO) {
-    val contentValues = ContentValues().apply {
-        put(MediaStore.MediaColumns.DISPLAY_NAME, "Scan_${System.currentTimeMillis()}.jpg")
-        put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/DocumentScans")
-            put(MediaStore.MediaColumns.IS_PENDING, 1)
-        }
-    }
-
-    val resolver = context.contentResolver
-    val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues) ?: return@withContext null
-
-    try {
-        resolver.openOutputStream(uri)?.use { stream ->
-            if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 95, stream)) {
-                throw Exception(errorMessage)
-            }
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            contentValues.clear()
-            contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
-            resolver.update(uri, contentValues, null, null)
-        }
-
-        uri
-    } catch (e: Exception) {
-        resolver.delete(uri, null, null)
-        throw e
-    }
-}
-
-suspend fun saveImageToGalleryLegacy(bitmap: Bitmap, context: Context, errorMessage: String): Uri? = withContext(Dispatchers.IO) {
-    val contentValues = ContentValues().apply {
-        put(MediaStore.MediaColumns.DISPLAY_NAME, "Scan_${System.currentTimeMillis()}.jpg")
-        put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-    }
-
-    val resolver = context.contentResolver
-    val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues) ?: return@withContext null
-
-    try {
-        resolver.openOutputStream(uri)?.use { stream ->
-            if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 95, stream)) {
-                throw Exception(errorMessage)
-            }
-        }
-        uri
-    } catch (e: Exception) {
-        resolver.delete(uri, null, null)
-        throw e
-    }
-}

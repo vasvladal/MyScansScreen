@@ -1,5 +1,7 @@
 // File: app/src/main/java/com/example/kropimagecropper/data/ScanManager.kt
 
+// File: app/src/main/java/com/example/kropimagecropper/data/ScanManager.kt
+
 package com.example.kropimagecropper.data
 
 import android.content.ContentValues
@@ -25,12 +27,12 @@ object ScanManager {
     private const val TEMP_FOLDER = "temp"
 
     /**
-     * Get the directory where scans are stored
+     * Get the directory where scans are stored (public directory)
      */
     fun getScansDirectory(context: Context): File {
         val directory = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // Use app-specific external directory for Android 10+
-            File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES), SCANS_FOLDER)
+            // Use public directory for Android 10+
+            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), SCANS_FOLDER)
         } else {
             // Use external storage for older versions
             File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), SCANS_FOLDER)
@@ -55,7 +57,7 @@ object ScanManager {
     }
 
     /**
-     * Create a temporary URI for camera capture - IMPROVED VERSION
+     * Create a temporary URI for camera capture
      */
     fun createTempImageUri(context: Context): Uri? {
         return try {
@@ -92,19 +94,11 @@ object ScanManager {
     }
 
     /**
-     * Save the cropped image to the scans directory
+     * Save the cropped image to the public scans directory
      */
-    suspend fun saveCroppedImage(context: Context, croppedUri: Uri): Boolean {
+    suspend fun saveCroppedImage(context: Context, bitmap: Bitmap): Boolean {
         return withContext(Dispatchers.IO) {
             try {
-                val inputStream = context.contentResolver.openInputStream(croppedUri)
-                    ?: return@withContext false
-
-                val bitmap = BitmapFactory.decodeStream(inputStream)
-                inputStream.close()
-
-                if (bitmap == null) return@withContext false
-
                 val scansDir = getScansDirectory(context)
                 val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
                 val fileName = "SCAN_$timeStamp.jpg"
@@ -113,9 +107,8 @@ object ScanManager {
                 val outputStream = FileOutputStream(scanFile)
                 val success = bitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
                 outputStream.close()
-                bitmap.recycle()
 
-                if (success && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                if (success) {
                     // Add to MediaStore for visibility in gallery
                     addToMediaStore(context, scanFile)
                 }
@@ -129,23 +122,26 @@ object ScanManager {
     }
 
     /**
-     * Add saved scan to MediaStore (Android 10+)
+     * Add saved scan to MediaStore
      */
     private fun addToMediaStore(context: Context, file: File) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            try {
-                val values = ContentValues().apply {
-                    put(MediaStore.Images.Media.DISPLAY_NAME, file.name)
-                    put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-                    put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/$SCANS_FOLDER")
-                    put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis() / 1000)
-                    put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis())
-                }
+        try {
+            val values = ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, file.name)
+                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis() / 1000)
+                put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis())
 
-                context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-            } catch (e: Exception) {
-                e.printStackTrace()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/$SCANS_FOLDER")
+                } else {
+                    put(MediaStore.Images.Media.DATA, file.absolutePath)
+                }
             }
+
+            context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 

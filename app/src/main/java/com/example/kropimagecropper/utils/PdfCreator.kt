@@ -2,12 +2,14 @@
 
 package com.example.kropimagecropper.utils
 
+import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.pdf.PdfDocument
 import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -53,18 +55,54 @@ object PdfCreator {
                     }
                 }
 
-                // Save PDF
-                val pdfDir = getPdfDirectory(context)
+                // Save PDF to public Documents directory
                 val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-                val pdfFile = File(pdfDir, "SCAN_$timeStamp.pdf")
+                val fileName = "SCAN_$timeStamp.pdf"
 
-                val outputStream = FileOutputStream(pdfFile)
-                pdfDocument.writeTo(outputStream)
-                outputStream.close()
-                pdfDocument.close()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    // Use MediaStore for Android 10+
+                    val values = ContentValues().apply {
+                        put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                        put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
+                        put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOCUMENTS}/DocumentScans")
+                    }
 
-                withContext(Dispatchers.Main) {
-                    onResult(true, pdfFile.absolutePath)
+                    val resolver = context.contentResolver
+                    val uri = resolver.insert(MediaStore.Files.getContentUri("external"), values)
+
+                    if (uri != null) {
+                        resolver.openOutputStream(uri)?.use { outputStream ->
+                            pdfDocument.writeTo(outputStream)
+                        }
+                        pdfDocument.close()
+
+                        withContext(Dispatchers.Main) {
+                            onResult(true, uri.toString())
+                        }
+                    } else {
+                        pdfDocument.close()
+                        withContext(Dispatchers.Main) {
+                            onResult(false, null)
+                        }
+                    }
+                } else {
+                    // Use direct file access for older Android versions
+                    val documentsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+                    val pdfDir = File(documentsDir, "DocumentScans")
+
+                    if (!pdfDir.exists()) {
+                        pdfDir.mkdirs()
+                    }
+
+                    val pdfFile = File(pdfDir, fileName)
+                    val outputStream = FileOutputStream(pdfFile)
+                    pdfDocument.writeTo(outputStream)
+                    outputStream.close()
+                    pdfDocument.close()
+
+                    withContext(Dispatchers.Main) {
+                        onResult(true, pdfFile.absolutePath)
+                    }
                 }
 
             } catch (e: Exception) {
@@ -74,19 +112,5 @@ object PdfCreator {
                 }
             }
         }
-    }
-
-    private fun getPdfDirectory(context: Context): File {
-        val directory = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "DocumentScans")
-        } else {
-            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "DocumentScans")
-        }
-
-        if (!directory.exists()) {
-            directory.mkdirs()
-        }
-
-        return directory
     }
 }
