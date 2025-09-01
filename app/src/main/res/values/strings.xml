@@ -10,7 +10,7 @@
     <!-- My Scans Screen -->
     <string name="my_scans">My Scans</string>
     <string name="no_scans_yet">No scans yet</string>
-    <string name="no_scans_description">Tap the + button to start scanning documents</string>
+    <string name="no_scans_description">Tap the back arrow to start scanning documents</string>
     <string name="new_scan">New Scan</string>
     <string name="selected_count">Selected:</string>
     <string name="select_scans">Select Scans</string>
@@ -29,12 +29,12 @@
 
     <!-- Delete Operations -->
     <string name="delete_scan">Delete Scan</string>
-    <string name="delete_scans">Delete Scans</string>
+    <string name="delete_scans">Delete Items</string>
     <string name="delete_scan_confirmation">Are you sure you want to delete this scan?</string>
     <string name="delete_confirmation">Are you sure you want to delete</string>
     <string name="delete">Delete</string>
     <string name="scan_deleted">Scan deleted</string>
-    <string name="scans_deleted">Scans deleted</string>
+    <string name="scans_deleted">Items deleted</string>
     <string name="delete_failed">Failed to delete scan</string>
 
     <!-- Save Operations -->
@@ -46,6 +46,10 @@
     <string name="create_pdf_confirmation">Create PDF from</string>
     <string name="pdf_saved">PDF saved to:</string>
     <string name="pdf_failed">Failed to create PDF</string>
+
+    <!-- Share Operations -->
+    <string name="share">Share</string>
+    <string name="share_failed">Failed to share files</string>
 
     <!-- Permissions -->
     <string name="camera_permission_required">Camera permission is required to take photos</string>

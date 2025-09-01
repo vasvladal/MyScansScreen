@@ -3,6 +3,7 @@
 package com.example.kropimagecropper.ui.screens
 
 import android.app.Activity
+import android.content.Intent
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.*
@@ -25,12 +26,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.example.kropimagecropper.R
 import com.example.kropimagecropper.data.ScanManager
 import com.example.kropimagecropper.utils.PdfCreator
 import kotlinx.coroutines.launch
 import java.io.File
+
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,12 +68,57 @@ fun MyScansScreen(
     val pdfSavedText = stringResource(R.string.pdf_saved)
     val pdfFailedText = stringResource(R.string.pdf_failed)
 
-    // Load scans
+    // Load scans including PDFs
     LaunchedEffect(Unit) {
         isLoading = true
         ScanManager.loadScans(scanDir) { loaded ->
-            scans = loaded
+            // Also load PDFs from the PDF directory
+            val pdfDir = PdfCreator.getPdfDirectory(context)
+            val pdfFiles = if (pdfDir.exists()) {
+                pdfDir.listFiles { file ->
+                    file.isFile && file.extension.lowercase() == "pdf"
+                }?.toList() ?: emptyList()
+            } else {
+                emptyList()
+            }
+            scans = (loaded + pdfFiles).sortedByDescending { it.lastModified() }
             isLoading = false
+        }
+    }
+
+    // Share files function
+    fun shareFiles(files: List<File>) {
+        try {
+            if (files.isEmpty()) return
+
+            val shareIntent = Intent().apply {
+                if (files.size == 1) {
+                    action = Intent.ACTION_SEND
+                    val uri = FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.fileprovider",
+                        files[0]
+                    )
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    type = if (files[0].extension.lowercase() == "pdf") "application/pdf" else "image/jpeg"
+                } else {
+                    action = Intent.ACTION_SEND_MULTIPLE
+                    val uris = files.map { file ->
+                        FileProvider.getUriForFile(
+                            context,
+                            "${context.packageName}.fileprovider",
+                            file
+                        )
+                    }
+                    putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
+                    type = "*/*" // Mixed file types
+                }
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+
+            context.startActivity(Intent.createChooser(shareIntent, "Share files"))
+        } catch (e: Exception) {
+            Toast.makeText(context, "Failed to share files: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -99,29 +149,33 @@ fun MyScansScreen(
                         if (isSelectMode) {
                             isSelectMode = false
                         } else {
-                            // Safe back navigation
-                            try {
-                                onBack()
-                            } catch (e: Exception) {
-                                // Fallback to system back if onBack fails
-                                (context as? Activity)?.finish()
-                            }
+                            // Use back arrow for navigation to scanner
+                            onScan()
                         }
                     }) {
                         Icon(
-                            imageVector = if (isSelectMode) Icons.Default.Close else Icons.Default.ArrowBack,
-                            contentDescription = if (isSelectMode) cancelText else "Back"
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = if (isSelectMode) cancelText else "Scanner"
                         )
                     }
                 },
                 actions = {
                     if (isSelectMode) {
+                        // Share button
+                        IconButton(
+                            onClick = { shareFiles(selected.toList()) },
+                            enabled = selected.isNotEmpty()
+                        ) {
+                            Icon(Icons.Default.Share, contentDescription = "Share")
+                        }
+                        // PDF creation button
                         IconButton(
                             onClick = { showPdfDialog = true },
-                            enabled = selected.isNotEmpty()
+                            enabled = selected.isNotEmpty() && selected.none { it.extension.lowercase() == "pdf" }
                         ) {
                             Icon(Icons.Default.PictureAsPdf, contentDescription = createPdfText)
                         }
+                        // Delete button
                         IconButton(
                             onClick = { showDeleteDialog = true },
                             enabled = selected.isNotEmpty()
@@ -131,19 +185,12 @@ fun MyScansScreen(
                     } else {
                         if (scans.isNotEmpty()) {
                             IconButton(onClick = { isSelectMode = true }) {
-                                Icon(Icons.Default.SelectAll, contentDescription = "Select all")
+                                Icon(Icons.Default.SelectAll, contentDescription = "Select")
                             }
                         }
                     }
                 }
             )
-        },
-        floatingActionButton = {
-            AnimatedVisibility(!isSelectMode) {
-                FloatingActionButton(onClick = onScan) {
-                    Icon(Icons.Default.Add, contentDescription = "Add new scan")
-                }
-            }
         }
     ) { padding ->
         if (isLoading) {
@@ -219,7 +266,25 @@ fun MyScansScreen(
                                     selected + file
                                 }
                             } else {
-                                onOpenScan(file.absolutePath)
+                                if (file.extension.lowercase() == "pdf") {
+                                    // Open PDF with external app
+                                    try {
+                                        val uri = FileProvider.getUriForFile(
+                                            context,
+                                            "${context.packageName}.fileprovider",
+                                            file
+                                        )
+                                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                                            setDataAndType(uri, "application/pdf")
+                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                        }
+                                        context.startActivity(intent)
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "No PDF viewer found", Toast.LENGTH_SHORT).show()
+                                    }
+                                } else {
+                                    onOpenScan(file.absolutePath)
+                                }
                             }
                         }
                     )
@@ -232,7 +297,7 @@ fun MyScansScreen(
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
                 title = { Text(deleteScansText) },
-                text = { Text("$deleteConfirmationText ${selected.size}") },
+                text = { Text("$deleteConfirmationText ${selected.size} items") },
                 confirmButton = {
                     Button(
                         onClick = {
@@ -243,14 +308,25 @@ fun MyScansScreen(
                                             file.delete()
                                         }
                                     }
-                                    // Update the scans list
-                                    scans = scans.filter { it !in selected && it.exists() }
+                                    // Reload scans
+                                    val scanDir = ScanManager.getScansDirectory(context)
+                                    ScanManager.loadScans(scanDir) { loaded ->
+                                        val pdfDir = PdfCreator.getPdfDirectory(context)
+                                        val pdfFiles = if (pdfDir.exists()) {
+                                            pdfDir.listFiles { f ->
+                                                f.isFile && f.extension.lowercase() == "pdf"
+                                            }?.toList() ?: emptyList()
+                                        } else {
+                                            emptyList()
+                                        }
+                                        scans = (loaded + pdfFiles).sortedByDescending { it.lastModified() }
+                                    }
                                     selected = emptySet()
                                     isSelectMode = false
                                     showDeleteDialog = false
                                     Toast.makeText(context, scansDeletedText, Toast.LENGTH_SHORT).show()
                                 } catch (e: Exception) {
-                                    Toast.makeText(context, "Failed to delete scans", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Failed to delete items", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         },
@@ -275,19 +351,33 @@ fun MyScansScreen(
             AlertDialog(
                 onDismissRequest = { showPdfDialog = false },
                 title = { Text(createPdfText) },
-                text = { Text("$createPdfConfirmationText ${selected.size}") },
+                text = { Text("$createPdfConfirmationText ${selected.size} images") },
                 confirmButton = {
                     Button(
                         onClick = {
                             scope.launch {
                                 try {
-                                    PdfCreator.createPdf(context, selected.toList()) { success, path ->
+                                    val imageFiles = selected.filter { it.extension.lowercase() != "pdf" }
+                                    PdfCreator.createPdf(context, imageFiles) { success, path ->
                                         if (success) {
                                             Toast.makeText(
                                                 context,
                                                 "$pdfSavedText${if (path != null) " $path" else ""}",
                                                 Toast.LENGTH_LONG
                                             ).show()
+                                            // Reload scans to include new PDF
+                                            val scanDir = ScanManager.getScansDirectory(context)
+                                            ScanManager.loadScans(scanDir) { loaded ->
+                                                val pdfDir = PdfCreator.getPdfDirectory(context)
+                                                val pdfFiles = if (pdfDir.exists()) {
+                                                    pdfDir.listFiles { f ->
+                                                        f.isFile && f.extension.lowercase() == "pdf"
+                                                    }?.toList() ?: emptyList()
+                                                } else {
+                                                    emptyList()
+                                                }
+                                                scans = (loaded + pdfFiles).sortedByDescending { it.lastModified() }
+                                            }
                                         } else {
                                             Toast.makeText(context, pdfFailedText, Toast.LENGTH_SHORT).show()
                                         }
@@ -323,6 +413,8 @@ private fun ScanItem(
     onSelect: (Boolean) -> Unit,
     onClick: () -> Unit
 ) {
+    val isPdf = file.extension.lowercase() == "pdf"
+
     Card(
         modifier = Modifier
             .widthIn(min = 120.dp)
@@ -357,15 +449,35 @@ private fun ScanItem(
         ) {
             Column {
                 Box {
-                    AsyncImage(
-                        model = file,
-                        contentDescription = "Scanned document",
-                        modifier = Modifier
-                            .height(120.dp)
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp)),
-                        contentScale = ContentScale.Crop
-                    )
+                    if (isPdf) {
+                        // PDF icon display
+                        Box(
+                            modifier = Modifier
+                                .height(120.dp)
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.PictureAsPdf,
+                                contentDescription = "PDF Document",
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    } else {
+                        // Image preview
+                        AsyncImage(
+                            model = file,
+                            contentDescription = "Scanned document",
+                            modifier = Modifier
+                                .height(120.dp)
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
 
                     if (isSelectMode) {
                         Box(
@@ -410,6 +522,14 @@ private fun ScanItem(
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
+                        if (isPdf) {
+                            Text(
+                                text = "PDF",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
