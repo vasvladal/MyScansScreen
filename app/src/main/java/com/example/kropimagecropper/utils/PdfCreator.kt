@@ -3,14 +3,11 @@
 package com.example.kropimagecropper.utils
 
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.pdf.PdfDocument
 import android.os.Build
 import android.os.Environment
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
@@ -19,60 +16,47 @@ import java.util.*
 
 object PdfCreator {
 
-    fun createPdf(
-        context: Context,
-        imageFiles: List<File>,
-        onResult: (success: Boolean, path: String?) -> Unit
-    ) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val pdfDocument = PdfDocument()
-                var pageNumber = 1
+    /**
+     * Create a PDF from a list of image files.
+     * Returns the generated File if successful, or null if failed.
+     */
+    suspend fun createPdf(context: Context, imageFiles: List<File>): File? = withContext(Dispatchers.IO) {
+        try {
+            val pdfDocument = PdfDocument()
+            var pageNumber = 1
 
-                for (imageFile in imageFiles) {
-                    val bitmap = BitmapFactory.decodeFile(imageFile.absolutePath)
-                    if (bitmap != null) {
-                        // Create page info
-                        val pageInfo = PdfDocument.PageInfo.Builder(
-                            bitmap.width,
-                            bitmap.height,
-                            pageNumber
-                        ).create()
+            for (imageFile in imageFiles) {
+                val bitmap = BitmapFactory.decodeFile(imageFile.absolutePath)
+                if (bitmap != null) {
+                    val pageInfo = PdfDocument.PageInfo.Builder(
+                        bitmap.width,
+                        bitmap.height,
+                        pageNumber
+                    ).create()
 
-                        // Start page
-                        val page = pdfDocument.startPage(pageInfo)
-                        val canvas = page.canvas
+                    val page = pdfDocument.startPage(pageInfo)
+                    val canvas = page.canvas
+                    canvas.drawBitmap(bitmap, 0f, 0f, null)
+                    pdfDocument.finishPage(page)
 
-                        // Draw bitmap on canvas
-                        canvas.drawBitmap(bitmap, 0f, 0f, null)
-
-                        // Finish page
-                        pdfDocument.finishPage(page)
-                        bitmap.recycle()
-                        pageNumber++
-                    }
-                }
-
-                // Save PDF
-                val pdfDir = getPdfDirectory(context)
-                val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-                val pdfFile = File(pdfDir, "SCAN_$timeStamp.pdf")
-
-                val outputStream = FileOutputStream(pdfFile)
-                pdfDocument.writeTo(outputStream)
-                outputStream.close()
-                pdfDocument.close()
-
-                withContext(Dispatchers.Main) {
-                    onResult(true, pdfFile.absolutePath)
-                }
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-                withContext(Dispatchers.Main) {
-                    onResult(false, null)
+                    bitmap.recycle()
+                    pageNumber++
                 }
             }
+
+            val pdfDir = getPdfDirectory(context)
+            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val pdfFile = File(pdfDir, "SCAN_$timeStamp.pdf")
+
+            FileOutputStream(pdfFile).use { out ->
+                pdfDocument.writeTo(out)
+            }
+            pdfDocument.close()
+
+            pdfFile
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
     }
 
@@ -86,7 +70,6 @@ object PdfCreator {
         if (!directory.exists()) {
             directory.mkdirs()
         }
-
         return directory
     }
 }
