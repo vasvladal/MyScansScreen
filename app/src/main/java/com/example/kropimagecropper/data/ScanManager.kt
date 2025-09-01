@@ -1,7 +1,5 @@
 // File: app/src/main/java/com/example/kropimagecropper/data/ScanManager.kt
 
-// File: app/src/main/java/com/example/kropimagecropper/data/ScanManager.kt
-
 package com.example.kropimagecropper.data
 
 import android.content.ContentValues
@@ -27,12 +25,12 @@ object ScanManager {
     private const val TEMP_FOLDER = "temp"
 
     /**
-     * Get the directory where scans are stored (public directory)
+     * Get the directory where scans are stored
      */
     fun getScansDirectory(context: Context): File {
         val directory = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // Use public directory for Android 10+
-            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), SCANS_FOLDER)
+            // Use app-specific external directory for Android 10+
+            File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES), SCANS_FOLDER)
         } else {
             // Use external storage for older versions
             File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), SCANS_FOLDER)
@@ -57,21 +55,27 @@ object ScanManager {
     }
 
     /**
-     * Create a temporary URI for camera capture
+     * Create a temporary URI for camera capture - FIXED VERSION
      */
     fun createTempImageUri(context: Context): Uri? {
         return try {
-            val tempDir = getTempDirectory(context)
+            // Use external files directory instead of cache for better camera compatibility
+            val tempDir = File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES), TEMP_FOLDER)
+
+            // Ensure temp directory exists and is writable
+            if (!tempDir.exists()) {
+                val created = tempDir.mkdirs()
+                if (!created) {
+                    println("DEBUG: Failed to create temp directory")
+                    return null
+                }
+            }
+
             val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
             val imageFile = File(tempDir, "TEMP_$timeStamp.jpg")
 
-            // Ensure parent directory exists
-            imageFile.parentFile?.mkdirs()
-
-            // Create empty file if it doesn't exist
-            if (!imageFile.exists()) {
-                imageFile.createNewFile()
-            }
+            // Don't pre-create the file - let the camera app create it
+            // This avoids permission and corruption issues
 
             val uri = FileProvider.getUriForFile(
                 context,
@@ -82,8 +86,9 @@ object ScanManager {
             // Debug logging
             println("DEBUG: Created temp URI: $uri")
             println("DEBUG: File path: ${imageFile.absolutePath}")
-            println("DEBUG: File exists: ${imageFile.exists()}")
-            println("DEBUG: File can write: ${imageFile.canWrite()}")
+            println("DEBUG: Temp directory: ${tempDir.absolutePath}")
+            println("DEBUG: Temp directory exists: ${tempDir.exists()}")
+            println("DEBUG: Temp directory can write: ${tempDir.canWrite()}")
 
             uri
         } catch (e: Exception) {
@@ -94,11 +99,19 @@ object ScanManager {
     }
 
     /**
-     * Save the cropped image to the public scans directory
+     * Save the cropped image to the scans directory
      */
-    suspend fun saveCroppedImage(context: Context, bitmap: Bitmap): Boolean {
+    suspend fun saveCroppedImage(context: Context, croppedUri: Uri): Boolean {
         return withContext(Dispatchers.IO) {
             try {
+                val inputStream = context.contentResolver.openInputStream(croppedUri)
+                    ?: return@withContext false
+
+                val bitmap = BitmapFactory.decodeStream(inputStream)
+                inputStream.close()
+
+                if (bitmap == null) return@withContext false
+
                 val scansDir = getScansDirectory(context)
                 val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
                 val fileName = "SCAN_$timeStamp.jpg"
@@ -107,8 +120,9 @@ object ScanManager {
                 val outputStream = FileOutputStream(scanFile)
                 val success = bitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
                 outputStream.close()
+                bitmap.recycle()
 
-                if (success) {
+                if (success && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     // Add to MediaStore for visibility in gallery
                     addToMediaStore(context, scanFile)
                 }
@@ -122,26 +136,23 @@ object ScanManager {
     }
 
     /**
-     * Add saved scan to MediaStore
+     * Add saved scan to MediaStore (Android 10+)
      */
     private fun addToMediaStore(context: Context, file: File) {
-        try {
-            val values = ContentValues().apply {
-                put(MediaStore.Images.Media.DISPLAY_NAME, file.name)
-                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-                put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis() / 1000)
-                put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis())
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                val values = ContentValues().apply {
+                    put(MediaStore.Images.Media.DISPLAY_NAME, file.name)
+                    put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
                     put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/$SCANS_FOLDER")
-                } else {
-                    put(MediaStore.Images.Media.DATA, file.absolutePath)
+                    put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis() / 1000)
+                    put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis())
                 }
-            }
 
-            context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-        } catch (e: Exception) {
-            e.printStackTrace()
+                context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
@@ -191,16 +202,50 @@ object ScanManager {
     }
 
     /**
-     * Check if a URI points to a valid image file
+     * Check if a URI points to a valid image file - FIXED VERSION
      */
     fun isValidImageUri(context: Context, uri: Uri): Boolean {
         return try {
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                val bitmap = BitmapFactory.decodeStream(inputStream)
-                bitmap != null
+                val options = BitmapFactory.Options().apply {
+                    inJustDecodeBounds = true
+                }
+                BitmapFactory.decodeStream(inputStream, null, options)
+                options.outWidth > 0 && options.outHeight > 0
             } ?: false
         } catch (e: Exception) {
             false
+        }
+    }
+
+    /**
+     * Copy URI content to a temporary file for better compatibility
+     */
+    fun copyUriToTempFile(context: Context, uri: Uri): Uri? {
+        return try {
+            val tempDir = getTempDirectory(context)
+            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val tempFile = File(tempDir, "COPY_$timeStamp.jpg")
+
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                FileOutputStream(tempFile).use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+
+            if (tempFile.exists() && tempFile.length() > 0) {
+                FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    tempFile
+                )
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            println("DEBUG: Error copying URI to temp file: ${e.message}")
+            e.printStackTrace()
+            null
         }
     }
 }

@@ -4,6 +4,7 @@ package com.example.kropimagecropper.ui.screens
 
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.*
@@ -31,7 +32,9 @@ import coil.compose.AsyncImage
 import com.example.kropimagecropper.R
 import com.example.kropimagecropper.data.ScanManager
 import com.example.kropimagecropper.utils.PdfCreator
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,19 +71,31 @@ fun MyScansScreen(
     // Load scans including PDFs
     LaunchedEffect(Unit) {
         isLoading = true
-        ScanManager.loadScans(scanDir) { loaded ->
-            // Also load PDFs from the PDF directory
-            val pdfDir = PdfCreator.getPdfDirectory(context)
-            val pdfFiles = if (pdfDir.exists()) {
+        // Load image scans
+        val loaded = withContext(Dispatchers.IO) {
+            if (scanDir.exists()) {
+                scanDir.listFiles { file ->
+                    file.isFile && file.extension.lowercase() in listOf("jpg", "jpeg", "png")
+                }?.sortedByDescending { it.lastModified() } ?: emptyList()
+            } else {
+                emptyList()
+            }
+        }
+
+        // Load PDFs
+        val pdfDir = PdfCreator.getPdfDirectory(context)
+        val pdfFiles = withContext(Dispatchers.IO) {
+            if (pdfDir.exists()) {
                 pdfDir.listFiles { file ->
                     file.isFile && file.extension.lowercase() == "pdf"
                 }?.toList() ?: emptyList()
             } else {
                 emptyList()
             }
-            scans = (loaded + pdfFiles).sortedByDescending { it.lastModified() }
-            isLoading = false
         }
+
+        scans = (loaded + pdfFiles).sortedByDescending { it.lastModified() }
+        isLoading = false
     }
 
     // Share files function
@@ -98,6 +113,7 @@ fun MyScansScreen(
                     )
                     putExtra(Intent.EXTRA_STREAM, uri)
                     type = if (files[0].extension.lowercase() == "pdf") "application/pdf" else "image/jpeg"
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 } else {
                     action = Intent.ACTION_SEND_MULTIPLE
                     val uris = files.map { file ->
@@ -108,9 +124,9 @@ fun MyScansScreen(
                         )
                     }
                     putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
-                    type = "*/*" // Mixed file types
+                    type = "*/*"
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
 
             context.startActivity(Intent.createChooser(shareIntent, "Share files"))
@@ -263,6 +279,7 @@ fun MyScansScreen(
                                     selected + file
                                 }
                             } else {
+                                // In the ScanItem onClick handler, replace the PDF handling code with:
                                 if (file.extension.lowercase() == "pdf") {
                                     // Open PDF with external app
                                     try {
@@ -271,10 +288,26 @@ fun MyScansScreen(
                                             "${context.packageName}.fileprovider",
                                             file
                                         )
+
                                         val intent = Intent(Intent.ACTION_VIEW).apply {
                                             setDataAndType(uri, "application/pdf")
                                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                            addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION) // Optional, if needed
                                         }
+
+                                        // Grant temporary permissions to all apps that can handle the intent
+                                        val resolvedIntentActivities = context.packageManager
+                                            .queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+
+                                        for (resolvedIntentInfo in resolvedIntentActivities) {
+                                            val packageName = resolvedIntentInfo.activityInfo.packageName
+                                            context.grantUriPermission(
+                                                packageName,
+                                                uri,
+                                                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                                            )
+                                        }
+
                                         context.startActivity(intent)
                                     } catch (e: Exception) {
                                         Toast.makeText(context, "No PDF viewer found", Toast.LENGTH_SHORT).show()
@@ -307,17 +340,25 @@ fun MyScansScreen(
                                     }
                                     // Reload scans
                                     val scanDir = ScanManager.getScansDirectory(context)
-                                    ScanManager.loadScans(scanDir) { loaded ->
-                                        val pdfDir = PdfCreator.getPdfDirectory(context)
-                                        val pdfFiles = if (pdfDir.exists()) {
-                                            pdfDir.listFiles { f ->
-                                                f.isFile && f.extension.lowercase() == "pdf"
-                                            }?.toList() ?: emptyList()
-                                        } else {
-                                            emptyList()
-                                        }
-                                        scans = (loaded + pdfFiles).sortedByDescending { it.lastModified() }
+                                    val pdfDir = PdfCreator.getPdfDirectory(context)
+
+                                    val loaded = if (scanDir.exists()) {
+                                        scanDir.listFiles { file ->
+                                            file.isFile && file.extension.lowercase() in listOf("jpg", "jpeg", "png")
+                                        }?.sortedByDescending { it.lastModified() } ?: emptyList()
+                                    } else {
+                                        emptyList()
                                     }
+
+                                    val pdfFiles = if (pdfDir.exists()) {
+                                        pdfDir.listFiles { f ->
+                                            f.isFile && f.extension.lowercase() == "pdf"
+                                        }?.toList() ?: emptyList()
+                                    } else {
+                                        emptyList()
+                                    }
+
+                                    scans = (loaded + pdfFiles).sortedByDescending { it.lastModified() }
                                     selected = emptySet()
                                     isSelectMode = false
                                     showDeleteDialog = false
@@ -364,17 +405,25 @@ fun MyScansScreen(
                                             ).show()
                                             // Reload scans to include new PDF
                                             val scanDir = ScanManager.getScansDirectory(context)
-//                                            ScanManager.loadScans(scanDir) { loaded ->
-//                                                val pdfDir = PdfCreator.getPdfDirectory(context)
-//                                                val pdfFiles = if (pdfDir.exists()) {
-//                                                    pdfDir.listFiles { f ->
-//                                                        f.isFile && f.extension.lowercase() == "pdf"
-//                                                    }?.toList() ?: emptyList()
-//                                                } else {
-//                                                    emptyList()
-//                                                }
-//                                                scans = (loaded + pdfFiles).sortedByDescending { it.lastModified() }
-//                                            }
+                                            val pdfDir = PdfCreator.getPdfDirectory(context)
+
+                                            val loaded = if (scanDir.exists()) {
+                                                scanDir.listFiles { file ->
+                                                    file.isFile && file.extension.lowercase() in listOf("jpg", "jpeg", "png")
+                                                }?.sortedByDescending { it.lastModified() } ?: emptyList()
+                                            } else {
+                                                emptyList()
+                                            }
+
+                                            val pdfFiles = if (pdfDir.exists()) {
+                                                pdfDir.listFiles { f ->
+                                                    f.isFile && f.extension.lowercase() == "pdf"
+                                                }?.toList() ?: emptyList()
+                                            } else {
+                                                emptyList()
+                                            }
+
+                                            scans = (loaded + pdfFiles).sortedByDescending { it.lastModified() }
                                         } else {
                                             Toast.makeText(context, pdfFailedText, Toast.LENGTH_SHORT).show()
                                         }

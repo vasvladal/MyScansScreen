@@ -65,6 +65,7 @@ fun ScannerScreen(onDone: () -> Unit) {
     var showSaveSuccess by remember { mutableStateOf(false) }
     var saveError by remember { mutableStateOf<String?>(null) }
     var saveLocation by remember { mutableStateOf<String?>(null) }
+    var cameraTempUri by remember { mutableStateOf<Uri?>(null) }
 
     // Krop image cropper
     val imageCropper = rememberImageCropper()
@@ -94,23 +95,50 @@ fun ScannerScreen(onDone: () -> Unit) {
         }
     )
 
-    // Gallery picker
+    // Gallery picker with better error handling
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        selectedImageUri = uri
+        uri?.let {
+            println("DEBUG: Gallery selected URI: $it")
+            // Copy gallery URI to temp file for better compatibility
+            val tempUri = ScanManager.copyUriToTempFile(context, it)
+            if (tempUri != null) {
+                println("DEBUG: Created temp copy: $tempUri")
+                selectedImageUri = tempUri
+            } else {
+                println("DEBUG: Failed to copy gallery image")
+                selectedImageUri = it // Fallback to original URI
+            }
+        }
     }
 
-    // Camera launcher
+    // Camera launcher with better error handling
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success: Boolean ->
-        if (success && selectedImageUri != null) {
-            // Image captured successfully, trigger cropping
-            // The LaunchedEffect will handle the cropping automatically
+        println("DEBUG: Camera capture result: $success")
+        if (success && cameraTempUri != null) {
+            println("DEBUG: Camera capture successful, URI: $cameraTempUri")
+            // Verify the captured image exists and is valid
+            val isValid = ScanManager.isValidImageUri(context, cameraTempUri!!)
+            if (isValid) {
+                println("DEBUG: Captured image is valid, proceeding with crop")
+                selectedImageUri = cameraTempUri
+            } else {
+                println("DEBUG: Captured image is invalid")
+                selectedImageUri = null
+                cameraTempUri = null
+                saveError = "Camera captured an invalid image. Please try again."
+                scope.launch {
+                    kotlinx.coroutines.delay(3000)
+                    saveError = null
+                }
+            }
         } else {
-            // Camera capture failed or cancelled
+            println("DEBUG: Camera capture failed or cancelled")
             selectedImageUri = null
+            cameraTempUri = null
             if (!success) {
                 saveError = "Camera capture failed or was cancelled"
                 scope.launch {
@@ -188,26 +216,59 @@ fun ScannerScreen(onDone: () -> Unit) {
         }
     }
 
-    // Debug the cropping process
+    // Handle cropping process with better validation and timing
     LaunchedEffect(selectedImageUri) {
         selectedImageUri?.let { uri ->
             try {
-                // Add some logging to see what's happening
-                println("DEBUG: Starting crop for URI: $uri")
-                when (val result = imageCropper.crop(uri, context)) {
+                println("DEBUG: Starting crop process for URI: $uri")
+                println("DEBUG: URI scheme: ${uri.scheme}")
+                println("DEBUG: URI path: ${uri.path}")
+
+                // Add more substantial delay for camera captures to ensure file is completely written
+                println("DEBUG: Waiting for image file to be ready...")
+                kotlinx.coroutines.delay(1500) // Increased delay
+
+                // Validate URI multiple times with delays if needed
+                var isValid = false
+                var attempts = 0
+                while (!isValid && attempts < 5) {
+                    isValid = ScanManager.isValidImageUri(context, uri)
+                    if (!isValid) {
+                        println("DEBUG: Validation attempt ${attempts + 1} failed, waiting...")
+                        kotlinx.coroutines.delay(1000)
+                        attempts++
+                    }
+                }
+
+                if (!isValid) {
+                    selectedImageUri = null
+                    saveError = "Camera image not ready. Please try taking the photo again."
+                    scope.launch {
+                        kotlinx.coroutines.delay(3000)
+                        saveError = null
+                    }
+                    return@let
+                }
+
+                println("DEBUG: Image validated successfully, starting crop operation...")
+                // Start cropping
+                val result = imageCropper.crop(uri, context)
+                println("DEBUG: Crop result type: ${result::class.simpleName}")
+
+                when (result) {
                     is CropResult.Success -> {
-                        println("DEBUG: Crop successful")
+                        println("DEBUG: Crop successful, bitmap size: ${result.bitmap.width}x${result.bitmap.height}")
                         croppedImage = result.bitmap
                         selectedImageUri = null
                     }
                     is CropResult.Cancelled -> {
-                        println("DEBUG: Crop cancelled")
+                        println("DEBUG: Crop cancelled by user")
                         selectedImageUri = null
                     }
                     is CropError -> {
                         println("DEBUG: Crop error occurred")
                         selectedImageUri = null
-                        saveError = "Crop operation failed. Please try again."
+                        saveError = "Crop operation failed. The image may be corrupted. Please try again."
                         scope.launch {
                             kotlinx.coroutines.delay(5000)
                             saveError = null
@@ -216,8 +277,9 @@ fun ScannerScreen(onDone: () -> Unit) {
                 }
             } catch (e: Exception) {
                 println("DEBUG: Exception during crop: ${e.message}")
+                e.printStackTrace()
                 selectedImageUri = null
-                saveError = "Crop error: ${e.message}"
+                saveError = "Crop error: ${e.message ?: "Unknown error"}. Please try again."
                 scope.launch {
                     kotlinx.coroutines.delay(5000)
                     saveError = null
@@ -449,21 +511,25 @@ fun ScannerScreen(onDone: () -> Unit) {
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // Camera button
+                            // Camera button with improved error handling
                             Button(
                                 onClick = {
                                     when {
                                         cameraPermission.status.isGranted -> {
                                             try {
                                                 println("DEBUG: Camera permission granted, creating temp URI")
+                                                // Clean up old temp files first
+                                                ScanManager.cleanupTempFiles(context)
+
                                                 val tempUri = ScanManager.createTempImageUri(context)
                                                 if (tempUri != null) {
-                                                    println("DEBUG: Temp URI created: $tempUri")
-                                                    selectedImageUri = tempUri
+                                                    println("DEBUG: Temp URI created successfully: $tempUri")
+                                                    cameraTempUri = tempUri
+                                                    println("DEBUG: Launching camera with URI: $tempUri")
                                                     cameraLauncher.launch(tempUri)
                                                 } else {
                                                     println("DEBUG: Failed to create temp URI")
-                                                    saveError = "Failed to create temporary file"
+                                                    saveError = "Failed to create temporary file for camera"
                                                     scope.launch {
                                                         kotlinx.coroutines.delay(3000)
                                                         saveError = null
@@ -471,6 +537,7 @@ fun ScannerScreen(onDone: () -> Unit) {
                                                 }
                                             } catch (e: Exception) {
                                                 println("DEBUG: Exception in camera button: ${e.message}")
+                                                e.printStackTrace()
                                                 saveError = "Camera error: ${e.message}"
                                                 scope.launch {
                                                     kotlinx.coroutines.delay(3000)
@@ -494,14 +561,16 @@ fun ScannerScreen(onDone: () -> Unit) {
                                 Text(stringResource(R.string.take_photo), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                             }
 
-                            // Gallery button
+                            // Gallery button with improved error handling
                             OutlinedButton(
                                 onClick = {
                                     when {
                                         readPermissionState.status.isGranted -> {
                                             try {
+                                                println("DEBUG: Launching gallery picker")
                                                 galleryLauncher.launch("image/*")
                                             } catch (e: Exception) {
+                                                println("DEBUG: Gallery launcher exception: ${e.message}")
                                                 saveError = "Gallery error: ${e.message}"
                                                 scope.launch {
                                                     kotlinx.coroutines.delay(3000)
@@ -510,6 +579,7 @@ fun ScannerScreen(onDone: () -> Unit) {
                                             }
                                         }
                                         else -> {
+                                            println("DEBUG: Requesting read permission")
                                             readPermissionState.launchPermissionRequest()
                                         }
                                     }
