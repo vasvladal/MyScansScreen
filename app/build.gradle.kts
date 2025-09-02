@@ -236,6 +236,34 @@ dependencies {
     debugImplementation(libs.bundles.debug.testing)
 
     implementation(libs.androidx.profileinstaller)
+
+
+    // Markwon for markdown rendering with exclusions
+    implementation(libs.markwon.core) {
+        exclude(group = "org.jetbrains", module = "annotations")
+        exclude(group = "org.jetbrains", module = "annotations-java5")
+    }
+    implementation(libs.markwon.html) {
+        exclude(group = "org.jetbrains", module = "annotations")
+        exclude(group = "org.jetbrains", module = "annotations-java5")
+    }
+
+    // Optional syntax highlighting
+    implementation(libs.markwon.syntax) {
+        exclude(group = "org.jetbrains", module = "annotations")
+        exclude(group = "org.jetbrains", module = "annotations-java5")
+    }
+    implementation(libs.prism4j) {
+        exclude(group = "org.jetbrains", module = "annotations")
+        exclude(group = "org.jetbrains", module = "annotations-java5")
+    }
+
+    // Image support for Markwon
+    implementation("io.noties.markwon:image:4.6.2") {
+        exclude(group = "org.jetbrains", module = "annotations")
+        exclude(group = "org.jetbrains", module = "annotations-java5")
+    }
+
 }
 
 // Task to increment version code

@@ -1,5 +1,6 @@
 package com.example.kropimagecropper
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -32,11 +33,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.compose.rememberNavController
 import com.example.kropimagecropper.navigation.Navigation
 import com.example.kropimagecropper.ui.theme.KropImageCropperTheme
 import com.example.kropimagecropper.utils.AppInfo
 import com.example.kropimagecropper.utils.LanguageUtils
+import io.noties.markwon.Markwon
+import kotlinx.io.IOException
+import android.widget.TextView
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -188,19 +193,62 @@ fun LanguageSelectionDialog(
     )
 }
 
+// Function to read markdown files from assets
+private fun readMarkdownFile(context: Context, fileName: String): String {
+    return try {
+        context.assets.open(fileName).bufferedReader().use { it.readText() }
+    } catch (e: IOException) {
+        // Fallback to English if specific language file not found
+        try {
+            context.assets.open("about_en.md").bufferedReader().use { it.readText() }
+        } catch (e: IOException) {
+            // Final fallback to string resource if English file not found
+            context.getString(R.string.about_description)
+        }
+    }
+}
+
 @Composable
 fun AboutDialog(
     onDismiss: () -> Unit,
     appVersion: String,
     appName: String
 ) {
+    val context = LocalContext.current
+    // Use the same method that's used for applying language to get the current language
+    val currentLanguage = LanguageUtils.getCurrentLanguage(context)
+
+    // Map language codes to file names
+    val markdownFileName = when (currentLanguage) {
+        "en" -> "about_en.md"
+        "ru" -> "about_ru.md"
+        "uk" -> "about_uk.md"
+        "ro" -> "about_ro.md"
+        else -> "about_en.md" // Default to English
+    }
+
+    val aboutText = remember { readMarkdownFile(context, markdownFileName) }
+
+    // Create Markwon instance
+    val markwon = remember { Markwon.create(context) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.about)) },
         text = {
             Column {
-                Text("$appName v$appVersion")
-                Text(stringResource(R.string.about_description))
+                Text("$appName v$appVersion", style = MaterialTheme.typography.titleMedium)
+                AndroidView(
+                    factory = { context ->
+                        TextView(context).apply {
+                            // Set any TextView properties you want here
+                        }
+                    },
+                    update = { textView ->
+                        markwon.setMarkdown(textView, aboutText)
+                    },
+                    modifier = Modifier.padding(top = 16.dp)
+                )
             }
         },
         confirmButton = {

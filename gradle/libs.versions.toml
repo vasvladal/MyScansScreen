@@ -39,6 +39,9 @@ compileSdk="36"
 profileinstaller = "1.4.1"
 appcompat = "1.7.1"
 
+markwon = "4.6.2"
+
+
 [libraries]
 # Android Core
 android-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "android-core-ktx" }
@@ -93,6 +96,15 @@ androidx-navigation-fragment-ktx = { group = "androidx.navigation", name = "navi
 androidx-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigation-ui-ktx" }
 reorderable = { module = "org.burnoutcrew.composereorderable:reorderable", version.ref = "reorderable" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+
+# Markwon libraries
+markwon-core = { module = "io.noties.markwon:core", version.ref = "markwon" }
+markwon-html = { module = "io.noties.markwon:html", version.ref = "markwon" }
+markwon-syntax = { module = "io.noties.markwon:syntax-highlight", version.ref = "markwon" }
+prism4j = { module = "io.noties:prism4j", version = "2.0.0" }
+
+
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "android-gradle-plugin" }
