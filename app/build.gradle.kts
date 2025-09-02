@@ -171,7 +171,7 @@ android {
 
         variant.outputs.all {
             val output = this
-            val projectName = "ClipboardMonitor"
+            val projectName = "DocumentScanner"
 
             when (output) {
                 is com.android.build.gradle.internal.api.ApkVariantOutputImpl -> {

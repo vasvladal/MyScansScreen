@@ -1,0 +1,37 @@
+{
+  "version": 3,
+  "artifactType": {
+    "type": "APK",
+    "kind": "Directory"
+  },
+  "applicationId": "com.example.kropimagecropper.v2",
+  "variantName": "release",
+  "elements": [
+    {
+      "type": "SINGLE",
+      "filters": [],
+      "attributes": [],
+      "versionCode": 10004,
+      "versionName": "1.0.0.4",
+      "outputFile": "DocumentScanner_1_0_0_4_10004_release_20250902_1954.apk"
+    }
+  ],
+  "elementType": "File",
+  "baselineProfiles": [
+    {
+      "minApi": 28,
+      "maxApi": 30,
+      "baselineProfiles": [
+        "baselineProfiles/1/DocumentScanner_1_0_0_4_10004_release_20250902_1954.dm"
+      ]
+    },
+    {
+      "minApi": 31,
+      "maxApi": 2147483647,
+      "baselineProfiles": [
+        "baselineProfiles/0/DocumentScanner_1_0_0_4_10004_release_20250902_1954.dm"
+      ]
+    }
+  ],
+  "minSdkVersionForDexing": 29
+}
