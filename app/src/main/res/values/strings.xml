@@ -6,14 +6,19 @@
     <!-- Navigation -->
     <string name="back">Back</string>
     <string name="cancel">Cancel</string>
+    <string name="done">Done</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
 
     <!-- My Scans Screen -->
     <string name="my_scans">My Scans</string>
     <string name="no_scans_yet">No scans yet</string>
-    <string name="no_scans_description">Tap the back arrow to start scanning documents</string>
+    <string name="no_scans_description">Tap the camera button to start scanning documents</string>
     <string name="new_scan">New Scan</string>
     <string name="selected_count">Selected:</string>
     <string name="select_scans">Select Scans</string>
+    <string name="scan_gallery">Scan Gallery</string>
+    <string name="recent_scans">Recent Scans</string>
 
     <!-- Scanner Screen -->
     <string name="document_scanner">Document Scanner</string>
@@ -22,10 +27,15 @@
     <string name="select_document">Select Document</string>
     <string name="camera_failed">Failed to access camera</string>
     <string name="processing">Processing...</string>
+    <string name="capture_document">Capture Document</string>
+    <string name="scan_ready">Ready to scan</string>
 
     <!-- Preview Screen -->
     <string name="preview_scan">Preview Scan</string>
     <string name="scan_not_found">Scan not found</string>
+    <string name="crop_and_enhance">Crop and Enhance</string>
+    <string name="adjust_corners">Adjust Corners</string>
+    <string name="enhance_quality">Enhance Quality</string>
 
     <!-- Delete Operations -->
     <string name="delete_scan">Delete Scan</string>
@@ -36,54 +46,103 @@
     <string name="scan_deleted">Scan deleted</string>
     <string name="scans_deleted">Items deleted</string>
     <string name="delete_failed">Failed to delete scan</string>
+    <string name="delete_permanently">Delete Permanently</string>
 
     <!-- Save Operations -->
     <string name="scan_saved">Scan saved successfully</string>
     <string name="save_failed">Failed to save scan</string>
+    <string name="save_as_scan">Save as Scan</string>
+    <string name="scan_another">Scan Another</string>
+    <string name="saved_to">Saved to: %1$s</string>
+    <string name="saving">Saving...</string>
 
     <!-- PDF Operations -->
     <string name="create_pdf">Create PDF</string>
     <string name="create_pdf_confirmation">Create PDF from</string>
     <string name="pdf_saved">PDF saved to:</string>
     <string name="pdf_failed">Failed to create PDF</string>
+    <string name="export_pdf">Export as PDF</string>
+    <string name="pdf_created">PDF Created Successfully</string>
+    <string name="creating_pdf">Creating PDF...</string>
 
     <!-- Share Operations -->
     <string name="share">Share</string>
     <string name="share_failed">Failed to share files</string>
+    <string name="share_scans">Share Scans</string>
+    <string name="share_as_pdf">Share as PDF</string>
+    <string name="share_as_images">Share as Images</string>
 
     <!-- Permissions -->
     <string name="camera_permission_required">Camera permission is required to take photos</string>
     <string name="storage_permission_required">Storage permission is required to save scans</string>
-
-    <string name="menu">Menu</string>
-    <string name="language">Language</string>
-    <string name="about">About</string>
-    <string name="select_language">Select Language</string>
-
-    <string name="ok">OK</string>
-    <string name="about_description">This is a powerful image cropping application with multiple features.</string>
-
-    <string name="english">English</string>
-    <string name="russian">Русский</string>
-    <string name="ukrainian">Українська</string>
-    <string name="romanian">Română</string>
-    <string name="start_scanning">Start Scanning</string>
-    <string name="take_a_photo">Take a photo or select an image to crop and scan</string>
-
-
-    <string name="save_as_scan">Save as Scan</string>
-    <string name="scan_another">Scan Another</string>
-    <string name="crop_operation_failed">Crop operation failed</string>
-    <string name="failed_to_compress_image">Failed to compress image</string>
-    <string name="loading_image">Loading image...</string>
-    <string name="processing_crop">Processing crop...</string>
-    <string name="saved_to">Saved to: %1$s</string>
-    <string name="scanned_document">Scanned Document</string>
-    <string name="view_my_scans">View My Scans</string>
     <string name="camera_and_photo_access_permissions_are_required_on_android_14_you_can_grant_partial_photo_access">Camera and photo access permissions are required. On Android 14+, you can grant partial photo access.</string>
     <string name="storage_and_camera_permissions_are_required_to_scan_documents">Storage and camera permissions are required to scan documents</string>
     <string name="full_photo_access_granted">✓ Full photo access granted</string>
     <string name="partial_photo_access_granted">✓ Partial photo access granted</string>
     <string name="photo_access_needed">⚠ Photo access needed</string>
+    <string name="grant_permissions">Grant Permissions</string>
 
+    <!-- Menu and Settings -->
+    <string name="menu">Menu</string>
+    <string name="language">Language</string>
+    <string name="about">About</string>
+    <string name="select_language">Select Language</string>
+    <string name="settings">Settings</string>
+    <string name="preferences">Preferences</string>
+
+    <!-- Dialog Actions -->
+    <string name="ok">OK</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="confirm">Confirm</string>
+    <string name="dismiss">Dismiss</string>
+
+    <!-- About and App Info -->
+    <string name="about_description">This is a powerful document scanning application with smart cropping and PDF export capabilities.</string>
+    <string name="version_info">Version Information</string>
+    <string name="app_version">App Version</string>
+
+    <!-- Languages -->
+    <string name="english">English</string>
+    <string name="russian">Русский</string>
+    <string name="ukrainian">Українська</string>
+    <string name="romanian">Română</string>
+
+    <!-- Scanning Process -->
+    <string name="start_scanning">Start Scanning</string>
+    <string name="take_a_photo">Take a photo or select an image to crop and scan</string>
+    <string name="crop_operation_failed">Crop operation failed</string>
+    <string name="failed_to_compress_image">Failed to compress image</string>
+    <string name="loading_image">Loading image...</string>
+    <string name="processing_crop">Processing crop...</string>
+    <string name="scanned_document">Scanned Document</string>
+    <string name="view_my_scans">View My Scans</string>
+    <string name="scan_complete">Scan Complete</string>
+    <string name="auto_enhance">Auto Enhance</string>
+
+    <!-- File Management -->
+    <string name="file_operations">File Operations</string>
+    <string name="export_options">Export Options</string>
+    <string name="organize_scans">Organize Scans</string>
+    <string name="storage_location">Storage Location</string>
+
+    <!-- Quality and Enhancement -->
+    <string name="image_quality">Image Quality</string>
+    <string name="enhance_text">Enhance Text</string>
+    <string name="adjust_brightness">Adjust Brightness</string>
+    <string name="auto_correct">Auto Correct</string>
+
+    <!-- Status Messages -->
+    <string name="ready">Ready</string>
+    <string name="processing_please_wait">Processing, please wait...</string>
+    <string name="operation_successful">Operation Successful</string>
+    <string name="operation_failed">Operation Failed</string>
+    <string name="try_again">Try Again</string>
+
+    <!-- Accessibility -->
+    <string name="scan_item_description">Scan item from %1$s</string>
+    <string name="app_icon_description">Document Scanner app icon</string>
+    <string name="menu_button_description">Open menu options</string>
+    <string name="camera_button_description">Take photo with camera</string>
+    <string name="gallery_button_description">Select image from gallery</string>
 </resources>

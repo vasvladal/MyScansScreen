@@ -1,5 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Modern primary colors -->
+    <color name="modern_blue_primary">#667EEA</color>
+    <color name="modern_blue_variant">#4F63D2</color>
+    <color name="modern_purple_primary">#764BA2</color>
+    <color name="modern_purple_variant">#5C3A85</color>
+
+    <!-- Modern accent colors -->
+    <color name="modern_orange">#FF6B6B</color>
+    <color name="modern_orange_variant">#E55555</color>
+    <color name="modern_teal">#4ECDC4</color>
+    <color name="modern_teal_variant">#3BA99C</color>
+    <color name="modern_green">#45B7D1</color>
+    <color name="modern_green_variant">#359BB0</color>
+
+    <!-- Surface colors for glassmorphism -->
+    <color name="glass_surface">#FFFFFEFE</color>
+    <color name="glass_surface_dark">#1E1E1E</color>
+    <color name="glass_overlay">#1AFFFFFF</color>
+    <color name="glass_overlay_dark">#1A000000</color>
+
+    <!-- Modern neutral palette -->
+    <color name="modern_gray_50">#FAFBFF</color>
+    <color name="modern_gray_100">#F3F4F9</color>
+    <color name="modern_gray_200">#E7E8ED</color>
+    <color name="modern_gray_300">#D1D3DB</color>
+    <color name="modern_gray_400">#9CA3AF</color>
+    <color name="modern_gray_500">#6B7280</color>
+    <color name="modern_gray_600">#4B5563</color>
+    <color name="modern_gray_700">#374151</color>
+    <color name="modern_gray_800">#1F2937</color>
+    <color name="modern_gray_900">#111827</color>
+
+    <!-- State colors -->
+    <color name="success_green">#4CAF50</color>
+    <color name="warning_amber">#FF9800</color>
+    <color name="error_red">#F44336</color>
+    <color name="info_blue">#2196F3</color>
+
+    <!-- Background gradients (start colors) -->
+    <color name="gradient_start_light">#667EEA</color>
+    <color name="gradient_end_light">#764BA2</color>
+    <color name="gradient_start_dark">#2D3748</color>
+    <color name="gradient_end_dark">#4A5568</color>
+
+    <!-- Legacy colors (maintained for compatibility) -->
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
     <color name="purple_700">#FF3700B3</color>
@@ -7,4 +52,28 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Card elevation tints -->
+    <color name="card_elevation_tint">#667EEA</color>
+    <color name="card_elevation_tint_dark">#764BA2</color>
+
+    <!-- Button state colors -->
+    <color name="button_pressed">#5A6FD8</color>
+    <color name="button_disabled">#9CA3AF</color>
+    <color name="button_surface">#F8FAFF</color>
+
+    <!-- Icon tints -->
+    <color name="icon_primary">#667EEA</color>
+    <color name="icon_secondary">#6B7280</color>
+    <color name="icon_accent">#FF6B6B</color>
+
+    <!-- Border colors -->
+    <color name="border_light">#E5E7EB</color>
+    <color name="border_medium">#D1D5DB</color>
+    <color name="border_focus">#667EEA</color>
+
+    <!-- Shadow colors -->
+    <color name="shadow_light">#1A667EEA</color>
+    <color name="shadow_medium">#33667EEA</color>
+    <color name="shadow_dark">#4D667EEA</color>
 </resources>

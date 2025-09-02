@@ -1,18 +1,22 @@
-<!-- Russian Translation -->
 <resources>
     <string name="app_name">Сканер документов</string>
 
     <!-- Navigation -->
     <string name="back">Назад</string>
     <string name="cancel">Отмена</string>
+    <string name="done">Готово</string>
+    <string name="next">Далее</string>
+    <string name="previous">Предыдущий</string>
 
     <!-- My Scans Screen -->
     <string name="my_scans">Мои сканы</string>
     <string name="no_scans_yet">Пока нет сканов</string>
-    <string name="no_scans_description">Нажмите на стрелку назад, чтобы начать сканирование документов</string>
+    <string name="no_scans_description">Нажмите кнопку камеры, чтобы начать сканирование документов</string>
     <string name="new_scan">Новое сканирование</string>
     <string name="selected_count">Выбрано:</string>
     <string name="select_scans">Выбрать сканы</string>
+    <string name="scan_gallery">Галерея сканов</string>
+    <string name="recent_scans">Недавние сканы</string>
 
     <!-- Scanner Screen -->
     <string name="document_scanner">Сканер документов</string>
@@ -21,10 +25,15 @@
     <string name="select_document">Выбрать документ</string>
     <string name="camera_failed">Не удалось получить доступ к камере</string>
     <string name="processing">Обработка...</string>
+    <string name="capture_document">Захватить документ</string>
+    <string name="scan_ready">Готово к сканированию</string>
 
     <!-- Preview Screen -->
-    <string name="preview_scan">Предпросмотр скана</string>
+    <string name="preview_scan">Предпросмотр</string>
     <string name="scan_not_found">Скан не найден</string>
+    <string name="crop_and_enhance">Обрезать и улучшить</string>
+    <string name="adjust_corners">Настроить углы</string>
+    <string name="enhance_quality">Улучшить качество</string>
 
     <!-- Delete Operations -->
     <string name="delete_scan">Удалить скан</string>
@@ -35,52 +44,103 @@
     <string name="scan_deleted">Скан удален</string>
     <string name="scans_deleted">Элементы удалены</string>
     <string name="delete_failed">Не удалось удалить скан</string>
+    <string name="delete_permanently">Удалить навсегда</string>
 
     <!-- Save Operations -->
     <string name="scan_saved">Скан успешно сохранен</string>
     <string name="save_failed">Не удалось сохранить скан</string>
+    <string name="save_as_scan">Сохранить как скан</string>
+    <string name="scan_another">Сканировать еще</string>
+    <string name="saved_to">Сохранено в: %1$s</string>
+    <string name="saving">Сохранение...</string>
 
     <!-- PDF Operations -->
     <string name="create_pdf">Создать PDF</string>
     <string name="create_pdf_confirmation">Создать PDF из</string>
     <string name="pdf_saved">PDF сохранен в:</string>
     <string name="pdf_failed">Не удалось создать PDF</string>
+    <string name="export_pdf">Экспортировать как PDF</string>
+    <string name="pdf_created">PDF успешно создан</string>
+    <string name="creating_pdf">Создание PDF...</string>
 
     <!-- Share Operations -->
     <string name="share">Поделиться</string>
     <string name="share_failed">Не удалось поделиться файлами</string>
+    <string name="share_scans">Поделиться сканами</string>
+    <string name="share_as_pdf">Поделиться как PDF</string>
+    <string name="share_as_images">Поделиться как изображения</string>
 
     <!-- Permissions -->
     <string name="camera_permission_required">Для съемки фото требуется разрешение на использование камеры</string>
     <string name="storage_permission_required">Для сохранения сканов требуется разрешение на доступ к хранилищу</string>
-
-    <string name="menu">Меню</string>
-    <string name="language">Язык</string>
-    <string name="about">О приложении</string>
-    <string name="select_language">Выберите язык</string>
-
-    <string name="ok">OK</string>
-    <string name="about_description">Это мощное приложение для обрезки изображений с множеством функций.</string>
-
-    <string name="english">English</string>
-    <string name="russian">Русский</string>
-    <string name="ukrainian">Українська</string>
-    <string name="romanian">Română</string>
-    <string name="start_scanning">Начать сканирование</string>
-    <string name="take_a_photo">Сделайте фото или выберите изображение для обрезки и сканирования</string>
-
-    <string name="save_as_scan">Сохранить как скан</string>
-    <string name="scan_another">Сканировать ещё</string>
-    <string name="crop_operation_failed">Ошибка обрезки</string>
-    <string name="failed_to_compress_image">Не удалось сжать изображение</string>
-    <string name="loading_image">Загрузка изображения…</string>
-    <string name="processing_crop">Обработка обрезки…</string>
-    <string name="saved_to">Сохранено в: %1$s</string>
-    <string name="scanned_document">Отсканированный документ</string>
-    <string name="view_my_scans">Мои сканы</string>
-    <string name="camera_and_photo_access_permissions_are_required_on_android_14_you_can_grant_partial_photo_access">Требуются разрешения на доступ к камере и фото. В Android 14+ вы можете предоставить частичный доступ к фото.</string>
+    <string name="camera_and_photo_access_permissions_are_required_on_android_14_you_can_grant_partial_photo_access">Требуются разрешения на доступ к камере и фото. На Android 14+ вы можете предоставить частичный доступ к фото.</string>
     <string name="storage_and_camera_permissions_are_required_to_scan_documents">Для сканирования документов требуются разрешения на доступ к хранилищу и камере</string>
     <string name="full_photo_access_granted">✓ Предоставлен полный доступ к фото</string>
     <string name="partial_photo_access_granted">✓ Предоставлен частичный доступ к фото</string>
     <string name="photo_access_needed">⚠ Требуется доступ к фото</string>
+    <string name="grant_permissions">Предоставить разрешения</string>
+
+    <!-- Menu and Settings -->
+    <string name="menu">Меню</string>
+    <string name="language">Язык</string>
+    <string name="about">О приложении</string>
+    <string name="select_language">Выбрать язык</string>
+    <string name="settings">Настройки</string>
+    <string name="preferences">Предпочтения</string>
+
+    <!-- Dialog Actions -->
+    <string name="ok">OK</string>
+    <string name="yes">Да</string>
+    <string name="no">Нет</string>
+    <string name="confirm">Подтвердить</string>
+    <string name="dismiss">Отклонить</string>
+
+    <!-- About and App Info -->
+    <string name="about_description">Это мощное приложение для сканирования документов с умным обрезанием и возможностью экспорта в PDF.</string>
+    <string name="version_info">Информация о версии</string>
+    <string name="app_version">Версия приложения</string>
+
+    <!-- Languages -->
+    <string name="english">Английский</string>
+    <string name="russian">Русский</string>
+    <string name="ukrainian">Украинский</string>
+    <string name="romanian">Румынский</string>
+
+    <!-- Scanning Process -->
+    <string name="start_scanning">Начать сканирование</string>
+    <string name="take_a_photo">Сделайте фото или выберите изображение для обрезки и сканирования</string>
+    <string name="crop_operation_failed">Операция обрезки не удалась</string>
+    <string name="failed_to_compress_image">Не удалось сжать изображение</string>
+    <string name="loading_image">Загрузка изображения...</string>
+    <string name="processing_crop">Обработка обрезки...</string>
+    <string name="scanned_document">Отсканированный документ</string>
+    <string name="view_my_scans">Посмотреть мои сканы</string>
+    <string name="scan_complete">Сканирование завершено</string>
+    <string name="auto_enhance">Автоулучшение</string>
+
+    <!-- File Management -->
+    <string name="file_operations">Операции с файлами</string>
+    <string name="export_options">Опции экспорта</string>
+    <string name="organize_scans">Организовать сканы</string>
+    <string name="storage_location">Расположение хранилища</string>
+
+    <!-- Quality and Enhancement -->
+    <string name="image_quality">Качество изображения</string>
+    <string name="enhance_text">Улучшить текст</string>
+    <string name="adjust_brightness">Настроить яркость</string>
+    <string name="auto_correct">Автоисправление</string>
+
+    <!-- Status Messages -->
+    <string name="ready">Готово</string>
+    <string name="processing_please_wait">Обработка, пожалуйста подождите...</string>
+    <string name="operation_successful">Операция успешна</string>
+    <string name="operation_failed">Операция не удалась</string>
+    <string name="try_again">Попробовать еще раз</string>
+
+    <!-- Accessibility -->
+    <string name="scan_item_description">Элемент сканирования из %1$s</string>
+    <string name="app_icon_description">Значок приложения Сканер документов</string>
+    <string name="menu_button_description">Открыть опции меню</string>
+    <string name="camera_button_description">Сделать фото с помощью камеры</string>
+    <string name="gallery_button_description">Выбрать изображение из галереи</string>
 </resources>

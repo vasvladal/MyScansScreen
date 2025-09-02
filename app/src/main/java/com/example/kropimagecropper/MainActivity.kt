@@ -4,43 +4,31 @@ import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.compose.rememberNavController
 import com.example.kropimagecropper.navigation.Navigation
@@ -79,94 +67,186 @@ class MainActivity : ComponentActivity() {
                     // State for about dialog
                     var showAboutDialog by remember { mutableStateOf(false) }
 
-                    Scaffold(
-                        topBar = {
-                            TopAppBar(
-                                title = {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        // Add your app icon here - using the launcher icon
-                                        Image(
-                                            painter = painterResource(id = R.mipmap.ic_launcher), // Use the launcher icon
-                                            contentDescription = "App Icon",
-                                            modifier = Modifier.size(32.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(title)
-                                    }
-                                },
-                                actions = {
-                                    // Three dots menu button
-                                    IconButton(onClick = { showMenu = true }) {
-                                        Icon(
-                                            imageVector = Icons.Default.MoreVert,
-                                            contentDescription = stringResource(R.string.menu)
-                                        )
-                                    }
+                    // Animation states
+                    val headerAlpha by animateFloatAsState(
+                        targetValue = 1f,
+                        animationSpec = tween(1000),
+                        label = "headerAlpha"
+                    )
+                    val headerScale by animateFloatAsState(
+                        targetValue = 1f,
+                        animationSpec = tween(800),
+                        label = "headerScale"
+                    )
 
-                                    // Dropdown menu
-                                    DropdownMenu(
-                                        expanded = showMenu,
-                                        onDismissRequest = { showMenu = false }
-                                    ) {
-                                        // Language option
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(R.string.language)) },
-                                            onClick = {
-                                                showMenu = false
-                                                showLanguageDialog = true
-                                            },
-                                            leadingIcon = {
-                                                Icon(
-                                                    Icons.Default.Language,
-                                                    contentDescription = null
-                                                )
-                                            }
-                                        )
-
-                                        // About option
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(R.string.about)) },
-                                            onClick = {
-                                                showMenu = false
-                                                showAboutDialog = true
-                                            },
-                                            leadingIcon = {
-                                                Icon(
-                                                    Icons.Default.Info,
-                                                    contentDescription = null
-                                                )
-                                            }
-                                        )
-                                    }
-                                }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.05f),
+                                        MaterialTheme.colorScheme.background
+                                    )
+                                )
                             )
-                        }
-                    ) { innerPadding ->
-                        androidx.compose.foundation.layout.Box(
-                            modifier = Modifier.padding(innerPadding)
-                        ) {
-                            Navigation(navController = navController)
+                    ) {
+                        Scaffold(
+                            containerColor = Color.Transparent,
+                            topBar = {
+                                TopAppBar(
+                                    modifier = Modifier
+                                        .alpha(headerAlpha)
+                                        .scale(headerScale)
+                                        .padding(horizontal = 8.dp)
+                                        .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)),
+                                    title = {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(vertical = 8.dp)
+                                        ) {
+                                            Card(
+                                                modifier = Modifier.size(40.dp),
+                                                shape = RoundedCornerShape(12.dp),
+                                                colors = CardDefaults.cardColors(
+                                                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                                                ),
+                                                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Image(
+                                                        painter = painterResource(id = R.mipmap.ic_launcher),
+                                                        contentDescription = "App Icon",
+                                                        modifier = Modifier.size(24.dp)
+                                                    )
+                                                }
+                                            }
+                                            Spacer(modifier = Modifier.width(12.dp))
+                                            Column {
+                                                Text(
+                                                    text = appName,
+                                                    fontSize = 18.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                                Text(
+                                                    text = "v$appVersion",
+                                                    fontSize = 12.sp,
+                                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                                )
+                                            }
+                                        }
+                                    },
+                                    colors = TopAppBarDefaults.topAppBarColors(
+                                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+                                    ),
+                                    actions = {
+                                        // Three dots menu button
+                                        Card(
+                                            modifier = Modifier.size(48.dp),
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                            )
+                                        ) {
+                                            IconButton(
+                                                onClick = { showMenu = true },
+                                                modifier = Modifier.fillMaxSize()
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.MoreVert,
+                                                    contentDescription = stringResource(R.string.menu),
+                                                    tint = MaterialTheme.colorScheme.onSurface
+                                                )
+                                            }
+                                        }
 
-                            // Language selection dialog
-                            if (showLanguageDialog) {
-                                LanguageSelectionDialog(
-                                    onDismiss = { showLanguageDialog = false },
-                                    onLanguageSelected = { languageCode ->
-                                        LanguageUtils.setAppLanguage(context, languageCode)
-                                        recreate() // Restart activity to apply language changes
+                                        // Enhanced Dropdown menu
+                                        DropdownMenu(
+                                            expanded = showMenu,
+                                            onDismissRequest = { showMenu = false },
+                                            modifier = Modifier
+                                                .background(
+                                                    MaterialTheme.colorScheme.surface,
+                                                    RoundedCornerShape(16.dp)
+                                                )
+                                        ) {
+                                            // Language option
+                                            DropdownMenuItem(
+                                                text = {
+                                                    Text(
+                                                        stringResource(R.string.language),
+                                                        fontWeight = FontWeight.Medium
+                                                    )
+                                                },
+                                                onClick = {
+                                                    showMenu = false
+                                                    showLanguageDialog = true
+                                                },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        Icons.Default.Language,
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.primary
+                                                    )
+                                                },
+                                                modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                                            )
+
+                                            // About option
+                                            DropdownMenuItem(
+                                                text = {
+                                                    Text(
+                                                        stringResource(R.string.about),
+                                                        fontWeight = FontWeight.Medium
+                                                    )
+                                                },
+                                                onClick = {
+                                                    showMenu = false
+                                                    showAboutDialog = true
+                                                },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        Icons.Default.Info,
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.primary
+                                                    )
+                                                },
+                                                modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                                            )
+                                        }
                                     }
                                 )
                             }
+                        ) { innerPadding ->
+                            Box(
+                                modifier = Modifier.padding(innerPadding)
+                            ) {
+                                Navigation(navController = navController)
 
-                            // About dialog
-                            if (showAboutDialog) {
-                                AboutDialog(
-                                    onDismiss = { showAboutDialog = false },
-                                    appVersion = appVersion,
-                                    appName = appName
-                                )
+                                // Enhanced Language selection dialog
+                                if (showLanguageDialog) {
+                                    ModernLanguageSelectionDialog(
+                                        onDismiss = { showLanguageDialog = false },
+                                        onLanguageSelected = { languageCode ->
+                                            LanguageUtils.setAppLanguage(context, languageCode)
+                                            recreate() // Restart activity to apply language changes
+                                        }
+                                    )
+                                }
+
+                                // Enhanced About dialog
+                                if (showAboutDialog) {
+                                    ModernAboutDialog(
+                                        onDismiss = { showAboutDialog = false },
+                                        appVersion = appVersion,
+                                        appName = appName
+                                    )
+                                }
                             }
                         }
                     }
@@ -177,38 +257,92 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun LanguageSelectionDialog(
+fun ModernLanguageSelectionDialog(
     onDismiss: () -> Unit,
     onLanguageSelected: (String) -> Unit
 ) {
     val languages = LanguageUtils.getLanguageDisplayNames()
+    val flags = mapOf(
+        "en" to "🇺🇸",
+        "ru" to "🇷🇺",
+        "uk" to "🇺🇦",
+        "ro" to "🇷🇴"
+    )
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.select_language)) },
+        title = {
+            Text(
+                stringResource(R.string.select_language),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+        },
         text = {
-            Column {
+            Column(
+                modifier = Modifier.padding(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 languages.forEach { (code, name) ->
-                    Button(
-                        onClick = {
-                            onLanguageSelected(code)
-                        },
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp)
+                            .clip(RoundedCornerShape(16.dp)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                        )
                     ) {
-                        Text(name)
+                        Button(
+                            onClick = { onLanguageSelected(code) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(4.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            elevation = null,
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                                horizontalArrangement = Arrangement.Start,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = flags[code] ?: "🌐",
+                                    fontSize = 24.sp,
+                                    modifier = Modifier.padding(end = 16.dp)
+                                )
+                                Text(
+                                    text = name,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
                     }
                 }
             }
         },
         confirmButton = {
-            Button(
-                onClick = onDismiss
+            TextButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary
+                )
             ) {
-                Text(stringResource(R.string.cancel))
+                Text(
+                    stringResource(R.string.cancel),
+                    fontWeight = FontWeight.Medium
+                )
             }
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(24.dp)
     )
 }
 
@@ -228,13 +362,12 @@ private fun readMarkdownFile(context: Context, fileName: String): String {
 }
 
 @Composable
-fun AboutDialog(
+fun ModernAboutDialog(
     onDismiss: () -> Unit,
     appVersion: String,
     appName: String
 ) {
     val context = LocalContext.current
-    // Use the same method that's used for applying language to get the current language
     val currentLanguage = LanguageUtils.getCurrentLanguage(context)
 
     // Map language codes to file names
@@ -247,47 +380,110 @@ fun AboutDialog(
     }
 
     val aboutText = remember { readMarkdownFile(context, markdownFileName) }
-
-    // Create Markwon instance
     val markwon = remember { Markwon.create(context) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.about)) },
+        title = {
+            Text(
+                stringResource(R.string.about),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+        },
         text = {
-            Column {
-                // Add app icon to about dialog
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier.padding(vertical = 16.dp)
+            ) {
+                // Enhanced app header in about dialog
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                    ),
+                    shape = RoundedCornerShape(20.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                 ) {
-                    Image(
-                        painter = painterResource(id = R.mipmap.ic_launcher),
-                        contentDescription = "App Icon",
-                        modifier = Modifier.size(48.dp)
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text("$appName v$appVersion", style = MaterialTheme.typography.titleMedium)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp)
+                    ) {
+                        Card(
+                            modifier = Modifier.size(64.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.mipmap.ic_launcher),
+                                    contentDescription = "App Icon",
+                                    modifier = Modifier.size(40.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(20.dp))
+                        Column {
+                            Text(
+                                text = appName,
+                                style = MaterialTheme.typography.headlineSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            )
+                            Text(
+                                text = "Version $appVersion",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                )
+                            )
+                        }
+                    }
                 }
+
+                // Markdown content
                 AndroidView(
                     factory = { context ->
                         TextView(context).apply {
-                            // Set any TextView properties you want here
+                            setPadding(16, 16, 16, 16)
+                            setBackgroundColor(android.graphics.Color.TRANSPARENT)
                         }
                     },
                     update = { textView ->
                         markwon.setMarkdown(textView, aboutText)
                     },
-                    modifier = Modifier.padding(top = 16.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
                 )
             }
         },
         confirmButton = {
             Button(
-                onClick = onDismiss
+                onClick = onDismiss,
+                modifier = Modifier.clip(RoundedCornerShape(12.dp)),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp)
             ) {
-                Text(stringResource(R.string.ok))
+                Text(
+                    stringResource(R.string.ok),
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                )
             }
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(28.dp)
     )
 }

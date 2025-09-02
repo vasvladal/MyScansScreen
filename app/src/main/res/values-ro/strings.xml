@@ -1,86 +1,146 @@
-<!-- Romanian Translation -->
 <resources>
     <string name="app_name">Scaner Documente</string>
 
     <!-- Navigation -->
     <string name="back">Înapoi</string>
     <string name="cancel">Anulează</string>
+    <string name="done">Gata</string>
+    <string name="next">Următorul</string>
+    <string name="previous">Anterior</string>
 
     <!-- My Scans Screen -->
     <string name="my_scans">Scanările mele</string>
-    <string name="no_scans_yet">Nicio scanare încă</string>
-    <string name="no_scans_description">Apăsați pe săgeata înapoi pentru a începe scanarea documentelor</string>
+    <string name="no_scans_yet">Încă nu există scanări</string>
+    <string name="no_scans_description">Atingeți butonul camerei pentru a începe scanarea documentelor</string>
     <string name="new_scan">Scanare nouă</string>
     <string name="selected_count">Selectate:</string>
     <string name="select_scans">Selectează scanări</string>
+    <string name="scan_gallery">Galerie scanări</string>
+    <string name="recent_scans">Scanări recente</string>
 
     <!-- Scanner Screen -->
     <string name="document_scanner">Scaner Documente</string>
-    <string name="take_photo">Fă o fotografie</string>
+    <string name="take_photo">Fă o poză</string>
     <string name="select_from_gallery">Selectează din galerie</string>
     <string name="select_document">Selectează document</string>
     <string name="camera_failed">Nu s-a putut accesa camera</string>
-    <string name="processing">Se procesează...</string>
+    <string name="processing">Procesare...</string>
+    <string name="capture_document">Capturează document</string>
+    <string name="scan_ready">Gata de scanare</string>
 
     <!-- Preview Screen -->
-    <string name="preview_scan">Previzualizare scanare</string>
+    <string name="preview_scan">Previzualizare scan</string>
     <string name="scan_not_found">Scanarea nu a fost găsită</string>
+    <string name="crop_and_enhance">Decupează și îmbunătățește</string>
+    <string name="adjust_corners">Ajustează colțurile</string>
+    <string name="enhance_quality">Îmbunătățește calitatea</string>
 
     <!-- Delete Operations -->
     <string name="delete_scan">Șterge scanarea</string>
-    <string name="delete_scans">Șterge elementele</string>
+    <string name="delete_scans">Șterge elemente</string>
     <string name="delete_scan_confirmation">Sigur doriți să ștergeți această scanare?</string>
     <string name="delete_confirmation">Sigur doriți să ștergeți</string>
     <string name="delete">Șterge</string>
     <string name="scan_deleted">Scanare ștearsă</string>
     <string name="scans_deleted">Elemente șterse</string>
     <string name="delete_failed">Ștergerea scanării a eșuat</string>
+    <string name="delete_permanently">Șterge definitiv</string>
 
     <!-- Save Operations -->
     <string name="scan_saved">Scanarea a fost salvată cu succes</string>
     <string name="save_failed">Salvarea scanării a eșuat</string>
+    <string name="save_as_scan">Salvează ca scanare</string>
+    <string name="scan_another">Scanează altul</string>
+    <string name="saved_to">Salvat în: %1$s</string>
+    <string name="saving">Se salvează...</string>
 
     <!-- PDF Operations -->
     <string name="create_pdf">Creează PDF</string>
     <string name="create_pdf_confirmation">Creează PDF din</string>
     <string name="pdf_saved">PDF salvat în:</string>
     <string name="pdf_failed">Crearea PDF a eșuat</string>
+    <string name="export_pdf">Exportă ca PDF</string>
+    <string name="pdf_created">PDF creat cu succes</string>
+    <string name="creating_pdf">Se creează PDF...</string>
 
     <!-- Share Operations -->
     <string name="share">Partajează</string>
     <string name="share_failed">Partajarea fișierelor a eșuat</string>
+    <string name="share_scans">Partajează scanări</string>
+    <string name="share_as_pdf">Partajează ca PDF</string>
+    <string name="share_as_images">Partajează ca imagini</string>
 
     <!-- Permissions -->
     <string name="camera_permission_required">Permisiunea camerei este necesară pentru a face fotografii</string>
-    <string name="storage_permission_required">Permisiunea de stocare este necesară pentru a salva scanările</string>
-
-    <string name="menu">Meniu</string>
-    <string name="language">Limba</string>
-    <string name="about">Despre</string>
-    <string name="select_language">Selectează limba</string>
-
-    <string name="ok">OK</string>
-    <string name="about_description">Aceasta este o aplicație puternică de tăiere imagini cu multiple funcții.</string>
-
-    <string name="english">English</string>
-    <string name="russian">Русский</string>
-    <string name="ukrainian">Українська</string>
-    <string name="romanian">Română</string>
-    <string name="start_scanning">Începe scanarea</string>
-    <string name="take_a_photo">Fă o fotografie sau selectează o imagine pentru tăiere și scanare</string>
-
-    <string name="save_as_scan">Salvează ca scanare</string>
-    <string name="scan_another">Scanează altul</string>
-    <string name="crop_operation_failed">Operațiunea de decupare a eșuat</string>
-    <string name="failed_to_compress_image">Nu s-a putut comprima imaginea</string>
-    <string name="loading_image">Se încarcă imaginea…</string>
-    <string name="processing_crop">Se procesează decuparea…</string>
-    <string name="saved_to">Salvat în: %1$s</string>
-    <string name="scanned_document">Document scanat</string>
-    <string name="view_my_scans">Vezi scanările mele</string>
+    <string name="storage_permission_required">Permisiunea de stocare este necesară pentru a salva scanări</string>
     <string name="camera_and_photo_access_permissions_are_required_on_android_14_you_can_grant_partial_photo_access">Permisiunile de acces la cameră și foto sunt necesare. Pe Android 14+, puteți acorda acces parțial la foto.</string>
     <string name="storage_and_camera_permissions_are_required_to_scan_documents">Permisiunile de stocare și cameră sunt necesare pentru a scana documente</string>
     <string name="full_photo_access_granted">✓ Acces complet la foto acordat</string>
     <string name="partial_photo_access_granted">✓ Acces parțial la foto acordat</string>
     <string name="photo_access_needed">⚠ Acces la foto necesar</string>
+    <string name="grant_permissions">Acordă permisiuni</string>
+
+    <!-- Menu and Settings -->
+    <string name="menu">Meniu</string>
+    <string name="language">Limba</string>
+    <string name="about">Despre</string>
+    <string name="select_language">Selectează limba</string>
+    <string name="settings">Setări</string>
+    <string name="preferences">Preferințe</string>
+
+    <!-- Dialog Actions -->
+    <string name="ok">OK</string>
+    <string name="yes">Da</string>
+    <string name="no">Nu</string>
+    <string name="confirm">Confirmă</string>
+    <string name="dismiss">Respinge</string>
+
+    <!-- About and App Info -->
+    <string name="about_description">Aceasta este o aplicație puternică de scanare a documentelor cu decupare inteligentă și capabilități de export PDF.</string>
+    <string name="version_info">Informații versiune</string>
+    <string name="app_version">Versiunea aplicației</string>
+
+    <!-- Languages -->
+    <string name="english">Engleză</string>
+    <string name="russian">Rusă</string>
+    <string name="ukrainian">Ucraineană</string>
+    <string name="romanian">Română</string>
+
+    <!-- Scanning Process -->
+    <string name="start_scanning">Începe scanarea</string>
+    <string name="take_a_photo">Fă o fotografie sau selectează o imagine pentru a o decupa și scana</string>
+    <string name="crop_operation_failed">Operația de decupare a eșuat</string>
+    <string name="failed_to_compress_image">Comprimarea imaginii a eșuat</string>
+    <string name="loading_image">Se încarcă imaginea...</string>
+    <string name="processing_crop">Se procesează decuparea...</string>
+    <string name="scanned_document">Document scanat</string>
+    <string name="view_my_scans">Vezi scanările mele</string>
+    <string name="scan_complete">Scanare completă</string>
+    <string name="auto_enhance">Îmbunătățire automată</string>
+
+    <!-- File Management -->
+    <string name="file_operations">Operațiuni fișiere</string>
+    <string name="export_options">Opțiuni export</string>
+    <string name="organize_scans">Organizează scanări</string>
+    <string name="storage_location">Locație stocare</string>
+
+    <!-- Quality and Enhancement -->
+    <string name="image_quality">Calitate imagine</string>
+    <string name="enhance_text">Îmbunătățește textul</string>
+    <string name="adjust_brightness">Ajustează luminozitatea</string>
+    <string name="auto_correct">Corectare automată</string>
+
+    <!-- Status Messages -->
+    <string name="ready">Gata</string>
+    <string name="processing_please_wait">Se procesează, așteptați...</string>
+    <string name="operation_successful">Operațiune reușită</string>
+    <string name="operation_failed">Operațiune eșuată</string>
+    <string name="try_again">Încearcă din nou</string>
+
+    <!-- Accessibility -->
+    <string name="scan_item_description">Element de scanare din %1$s</string>
+    <string name="app_icon_description">Pictograma aplicației Scaner Documente</string>
+    <string name="menu_button_description">Deschide opțiunile meniului</string>
+    <string name="camera_button_description">Fă o poză cu camera</string>
+    <string name="gallery_button_description">Selectează imagine din galerie</string>
 </resources>
