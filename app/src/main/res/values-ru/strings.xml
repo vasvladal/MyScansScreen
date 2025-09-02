@@ -1,0 +1,86 @@
+<!-- Russian Translation -->
+<resources>
+    <string name="app_name">Сканер документов</string>
+
+    <!-- Navigation -->
+    <string name="back">Назад</string>
+    <string name="cancel">Отмена</string>
+
+    <!-- My Scans Screen -->
+    <string name="my_scans">Мои сканы</string>
+    <string name="no_scans_yet">Пока нет сканов</string>
+    <string name="no_scans_description">Нажмите на стрелку назад, чтобы начать сканирование документов</string>
+    <string name="new_scan">Новое сканирование</string>
+    <string name="selected_count">Выбрано:</string>
+    <string name="select_scans">Выбрать сканы</string>
+
+    <!-- Scanner Screen -->
+    <string name="document_scanner">Сканер документов</string>
+    <string name="take_photo">Сделать фото</string>
+    <string name="select_from_gallery">Выбрать из галереи</string>
+    <string name="select_document">Выбрать документ</string>
+    <string name="camera_failed">Не удалось получить доступ к камере</string>
+    <string name="processing">Обработка...</string>
+
+    <!-- Preview Screen -->
+    <string name="preview_scan">Предпросмотр скана</string>
+    <string name="scan_not_found">Скан не найден</string>
+
+    <!-- Delete Operations -->
+    <string name="delete_scan">Удалить скан</string>
+    <string name="delete_scans">Удалить элементы</string>
+    <string name="delete_scan_confirmation">Вы уверены, что хотите удалить этот скан?</string>
+    <string name="delete_confirmation">Вы уверены, что хотите удалить</string>
+    <string name="delete">Удалить</string>
+    <string name="scan_deleted">Скан удален</string>
+    <string name="scans_deleted">Элементы удалены</string>
+    <string name="delete_failed">Не удалось удалить скан</string>
+
+    <!-- Save Operations -->
+    <string name="scan_saved">Скан успешно сохранен</string>
+    <string name="save_failed">Не удалось сохранить скан</string>
+
+    <!-- PDF Operations -->
+    <string name="create_pdf">Создать PDF</string>
+    <string name="create_pdf_confirmation">Создать PDF из</string>
+    <string name="pdf_saved">PDF сохранен в:</string>
+    <string name="pdf_failed">Не удалось создать PDF</string>
+
+    <!-- Share Operations -->
+    <string name="share">Поделиться</string>
+    <string name="share_failed">Не удалось поделиться файлами</string>
+
+    <!-- Permissions -->
+    <string name="camera_permission_required">Для съемки фото требуется разрешение на использование камеры</string>
+    <string name="storage_permission_required">Для сохранения сканов требуется разрешение на доступ к хранилищу</string>
+
+    <string name="menu">Меню</string>
+    <string name="language">Язык</string>
+    <string name="about">О приложении</string>
+    <string name="select_language">Выберите язык</string>
+
+    <string name="ok">OK</string>
+    <string name="about_description">Это мощное приложение для обрезки изображений с множеством функций.</string>
+
+    <string name="english">English</string>
+    <string name="russian">Русский</string>
+    <string name="ukrainian">Українська</string>
+    <string name="romanian">Română</string>
+    <string name="start_scanning">Начать сканирование</string>
+    <string name="take_a_photo">Сделайте фото или выберите изображение для обрезки и сканирования</string>
+
+    <string name="save_as_scan">Сохранить как скан</string>
+    <string name="scan_another">Сканировать ещё</string>
+    <string name="crop_operation_failed">Ошибка обрезки</string>
+    <string name="failed_to_compress_image">Не удалось сжать изображение</string>
+    <string name="loading_image">Загрузка изображения…</string>
+    <string name="processing_crop">Обработка обрезки…</string>
+    <string name="saved_to">Сохранено в: %1$s</string>
+    <string name="scanned_document">Отсканированный документ</string>
+    <string name="view_my_scans">Мои сканы</string>
+    <string name="camera_and_photo_access_permissions_are_required_on_android_14_you_can_grant_partial_photo_access">Требуются разрешения на доступ к камере и фото. В Android 14+ вы можете предоставить частичный доступ к фото.</string>
+    <string name="storage_and_camera_permissions_are_required_to_scan_documents">Для сканирования документов требуются разрешения на доступ к хранилищу и камере</string>
+    <string name="full_photo_access_granted">✓ Предоставлен полный доступ к фото</string>
+    <string name="partial_photo_access_granted">✓ Предоставлен частичный доступ к фото</string>
+    <string name="photo_access_needed">⚠ Требуется доступ к фото</string>
+</resources>

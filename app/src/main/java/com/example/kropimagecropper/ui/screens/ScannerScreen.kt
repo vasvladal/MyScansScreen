@@ -40,7 +40,9 @@ import com.example.kropimagecropper.R
 import com.example.kropimagecropper.data.ScanManager
 import com.example.kropimagecropper.ui.theme.Dimens
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -74,25 +76,34 @@ fun ScannerScreen(onDone: () -> Unit) {
     val scanSavedText = stringResource(R.string.scan_saved)
     val saveFailedText = stringResource(R.string.save_failed)
     val processingText = stringResource(R.string.processing)
-    val cropErrorString = "Crop operation failed"
+    val cropErrorString = stringResource(R.string.crop_operation_failed)
     val storagePermissionRequired = stringResource(R.string.storage_permission_required)
-    val failedToCompressBitmap = "Failed to compress image"
+    val failedToCompressBitmap = stringResource(R.string.failed_to_compress_image)
 
-    // Permissions
+    // Permissions with Android 14+ support
     val cameraPermission = rememberPermissionState(permission = Manifest.permission.CAMERA)
-    val readPermissionState = rememberPermissionState(
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            Manifest.permission.READ_MEDIA_IMAGES
-        } else {
-            Manifest.permission.READ_EXTERNAL_STORAGE
+
+    // Media permissions based on Android version
+    val mediaPermissions = when {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> { // Android 14+ (API 34+)
+            listOf(
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+            )
         }
-    )
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> { // Android 13 (API 33)
+            listOf(Manifest.permission.READ_MEDIA_IMAGES)
+        }
+        else -> { // Android 12 and below
+            listOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+    }
+
+    val mediaPermissionsState = rememberMultiplePermissionsState(permissions = mediaPermissions)
+
+    // Write permission for Android 10 and below
     val writePermissionState = rememberPermissionState(
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            Manifest.permission.READ_MEDIA_IMAGES
-        } else {
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
-        }
+        permission = Manifest.permission.WRITE_EXTERNAL_STORAGE
     )
 
     // Gallery picker with better error handling
@@ -150,8 +161,8 @@ fun ScannerScreen(onDone: () -> Unit) {
     }
 
     // Handle permission request result for gallery
-    LaunchedEffect(readPermissionState.status) {
-        if (readPermissionState.status.isGranted && selectedImageUri != null) {
+    LaunchedEffect(mediaPermissionsState.allPermissionsGranted) {
+        if (mediaPermissionsState.allPermissionsGranted && selectedImageUri != null) {
             // Permission granted, proceed with gallery selection if needed
         }
     }
@@ -159,6 +170,11 @@ fun ScannerScreen(onDone: () -> Unit) {
     // Convert ImageBitmap to Android Bitmap
     fun imageBitmapToBitmap(imageBitmap: ImageBitmap): Bitmap {
         return imageBitmap.asAndroidBitmap().copy(Bitmap.Config.ARGB_8888, true)
+    }
+
+    // Check if we need write permission
+    fun needsWritePermission(): Boolean {
+        return Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q && !writePermissionState.status.isGranted
     }
 
     // Save image to scans folder and gallery
@@ -336,8 +352,8 @@ fun ScannerScreen(onDone: () -> Unit) {
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
                                 text = when (status) {
-                                    CropperLoading.PreparingImage -> "Loading image..."
-                                    CropperLoading.SavingResult -> "Processing crop..."
+                                    CropperLoading.PreparingImage -> stringResource(R.string.loading_image)
+                                    CropperLoading.SavingResult -> stringResource(R.string.processing_crop)
                                 },
                                 style = MaterialTheme.typography.bodyLarge
                             )
@@ -366,7 +382,7 @@ fun ScannerScreen(onDone: () -> Unit) {
                             saveLocation?.let { location ->
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = "Saved to: ${File(location).name}",
+                                    text = stringResource(R.string.saved_to, File(location).name),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                 )
@@ -403,7 +419,7 @@ fun ScannerScreen(onDone: () -> Unit) {
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "Scanned Document",
+                                text = stringResource(R.string.scanned_document),
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary,
@@ -412,7 +428,7 @@ fun ScannerScreen(onDone: () -> Unit) {
 
                             Image(
                                 bitmap = croppedImage!!,
-                                contentDescription = "Scanned document",
+                                contentDescription = stringResource(R.string.scanned_document),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .heightIn(max = 400.dp)
@@ -432,7 +448,13 @@ fun ScannerScreen(onDone: () -> Unit) {
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Button(
-                                    onClick = { saveImageToScans() },
+                                    onClick = {
+                                        if (needsWritePermission()) {
+                                            writePermissionState.launchPermissionRequest()
+                                        } else {
+                                            saveImageToScans()
+                                        }
+                                    },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(56.dp),
@@ -440,7 +462,7 @@ fun ScannerScreen(onDone: () -> Unit) {
                                 ) {
                                     Icon(Icons.Default.Save, null, Modifier.size(20.dp))
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Save as Scan", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                                    Text(stringResource(R.string.save_as_scan), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                                 }
 
                                 OutlinedButton(
@@ -449,7 +471,7 @@ fun ScannerScreen(onDone: () -> Unit) {
                                 ) {
                                     Icon(Icons.Default.Refresh, null, Modifier.size(20.dp))
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Scan Another")
+                                    Text(stringResource(R.string.scan_another))
                                 }
 
                                 // Always visible "View My Scans" button
@@ -462,7 +484,7 @@ fun ScannerScreen(onDone: () -> Unit) {
                                 ) {
                                     Icon(Icons.Default.Folder, null, Modifier.size(20.dp))
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("View My Scans", fontWeight = FontWeight.Medium)
+                                    Text(stringResource(R.string.view_my_scans), fontWeight = FontWeight.Medium)
                                 }
                             }
                         }
@@ -495,14 +517,14 @@ fun ScannerScreen(onDone: () -> Unit) {
 
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
-                                    text = "Start Scanning",
+                                    text = stringResource(R.string.start_scanning),
                                     style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.Bold,
                                     textAlign = TextAlign.Center
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = "Take a photo or select an image to crop and scan",
+                                    text = stringResource(R.string.take_a_photo),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                                     textAlign = TextAlign.Center
@@ -561,11 +583,11 @@ fun ScannerScreen(onDone: () -> Unit) {
                                 Text(stringResource(R.string.take_photo), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                             }
 
-                            // Gallery button with improved error handling
+                            // Gallery button with improved error handling and Android 14+ support
                             OutlinedButton(
                                 onClick = {
                                     when {
-                                        readPermissionState.status.isGranted -> {
+                                        mediaPermissionsState.allPermissionsGranted -> {
                                             try {
                                                 println("DEBUG: Launching gallery picker")
                                                 galleryLauncher.launch("image/*")
@@ -579,8 +601,8 @@ fun ScannerScreen(onDone: () -> Unit) {
                                             }
                                         }
                                         else -> {
-                                            println("DEBUG: Requesting read permission")
-                                            readPermissionState.launchPermissionRequest()
+                                            println("DEBUG: Requesting media permissions")
+                                            mediaPermissionsState.launchMultiplePermissionRequest()
                                         }
                                     }
                                 },
@@ -603,18 +625,53 @@ fun ScannerScreen(onDone: () -> Unit) {
                             ) {
                                 Icon(Icons.Default.Folder, null, Modifier.size(20.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("View My Scans", fontWeight = FontWeight.Medium)
+                                Text(stringResource(R.string.view_my_scans), fontWeight = FontWeight.Medium)
                             }
 
-                            if (!readPermissionState.status.isGranted || !cameraPermission.status.isGranted) {
+                            // Permission status message with Android 14+ info
+                            if (!mediaPermissionsState.allPermissionsGranted || !cameraPermission.status.isGranted) {
                                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f))) {
-                                    Text(
-                                        text = "Storage and camera permissions are required to scan documents",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.padding(12.dp),
-                                        textAlign = TextAlign.Center
-                                    )
+                                    Column(modifier = Modifier.padding(12.dp)) {
+                                        Text(
+                                            text = when {
+                                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
+                                                    stringResource(R.string.camera_and_photo_access_permissions_are_required_on_android_14_you_can_grant_partial_photo_access)
+                                                }
+                                                else -> {
+                                                    stringResource(R.string.storage_and_camera_permissions_are_required_to_scan_documents)
+                                                }
+                                            },
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.error,
+                                            textAlign = TextAlign.Center
+                                        )
+
+                                        // Show specific permission status for Android 14+
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            val hasPartialAccess = mediaPermissionsState.permissions.any {
+                                                it.permission == Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED && it.status.isGranted
+                                            }
+                                            val hasFullAccess = mediaPermissionsState.permissions.any {
+                                                it.permission == Manifest.permission.READ_MEDIA_IMAGES && it.status.isGranted
+                                            }
+
+                                            Text(
+                                                text = when {
+                                                    hasFullAccess -> stringResource(R.string.full_photo_access_granted)
+                                                    hasPartialAccess -> stringResource(R.string.partial_photo_access_granted)
+                                                    else -> stringResource(R.string.photo_access_needed)
+                                                },
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = if (hasFullAccess || hasPartialAccess) {
+                                                    Color(0xFF4CAF50)
+                                                } else {
+                                                    MaterialTheme.colorScheme.error
+                                                },
+                                                textAlign = TextAlign.Center
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }

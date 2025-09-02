@@ -54,4 +54,36 @@
     <!-- Permissions -->
     <string name="camera_permission_required">Camera permission is required to take photos</string>
     <string name="storage_permission_required">Storage permission is required to save scans</string>
+
+    <string name="menu">Menu</string>
+    <string name="language">Language</string>
+    <string name="about">About</string>
+    <string name="select_language">Select Language</string>
+
+    <string name="ok">OK</string>
+    <string name="about_description">This is a powerful image cropping application with multiple features.</string>
+
+    <string name="english">English</string>
+    <string name="russian">Русский</string>
+    <string name="ukrainian">Українська</string>
+    <string name="romanian">Română</string>
+    <string name="start_scanning">Start Scanning</string>
+    <string name="take_a_photo">Take a photo or select an image to crop and scan</string>
+
+
+    <string name="save_as_scan">Save as Scan</string>
+    <string name="scan_another">Scan Another</string>
+    <string name="crop_operation_failed">Crop operation failed</string>
+    <string name="failed_to_compress_image">Failed to compress image</string>
+    <string name="loading_image">Loading image...</string>
+    <string name="processing_crop">Processing crop...</string>
+    <string name="saved_to">Saved to: %1$s</string>
+    <string name="scanned_document">Scanned Document</string>
+    <string name="view_my_scans">View My Scans</string>
+    <string name="camera_and_photo_access_permissions_are_required_on_android_14_you_can_grant_partial_photo_access">Camera and photo access permissions are required. On Android 14+, you can grant partial photo access.</string>
+    <string name="storage_and_camera_permissions_are_required_to_scan_documents">Storage and camera permissions are required to scan documents</string>
+    <string name="full_photo_access_granted">✓ Full photo access granted</string>
+    <string name="partial_photo_access_granted">✓ Partial photo access granted</string>
+    <string name="photo_access_needed">⚠ Photo access needed</string>
+
 </resources>
