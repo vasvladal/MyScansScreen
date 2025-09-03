@@ -71,6 +71,7 @@
     <string name="share_scans">Share Scans</string>
     <string name="share_as_pdf">Share as PDF</string>
     <string name="share_as_images">Share as Images</string>
+    <string name="share_files">Share files</string>
 
     <!-- Permissions -->
     <string name="camera_permission_required">Camera permission is required to take photos</string>
@@ -145,4 +146,5 @@
     <string name="menu_button_description">Open menu options</string>
     <string name="camera_button_description">Take photo with camera</string>
     <string name="gallery_button_description">Select image from gallery</string>
+
 </resources>

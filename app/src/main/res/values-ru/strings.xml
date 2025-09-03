@@ -69,6 +69,7 @@
     <string name="share_scans">Поделиться сканами</string>
     <string name="share_as_pdf">Поделиться как PDF</string>
     <string name="share_as_images">Поделиться как изображения</string>
+    <string name="share_files">Share files</string>
 
     <!-- Permissions -->
     <string name="camera_permission_required">Для съемки фото требуется разрешение на использование камеры</string>
@@ -143,4 +144,5 @@
     <string name="menu_button_description">Открыть опции меню</string>
     <string name="camera_button_description">Сделать фото с помощью камеры</string>
     <string name="gallery_button_description">Выбрать изображение из галереи</string>
+
 </resources>

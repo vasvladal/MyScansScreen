@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -129,7 +130,8 @@ fun MyScansScreen(
                 }
             }
 
-            context.startActivity(Intent.createChooser(shareIntent, "Share files"))
+            context.startActivity(Intent.createChooser(shareIntent,
+                context.getString(R.string.share_files)))
         } catch (e: Exception) {
             Toast.makeText(context, "Failed to share files: ${e.message}", Toast.LENGTH_SHORT).show()
         }
@@ -167,7 +169,7 @@ fun MyScansScreen(
                         }
                     }) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = if (isSelectMode) cancelText else "Scanner"
                         )
                     }

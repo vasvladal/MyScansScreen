@@ -69,6 +69,7 @@
     <string name="share_scans">Partajează scanări</string>
     <string name="share_as_pdf">Partajează ca PDF</string>
     <string name="share_as_images">Partajează ca imagini</string>
+    <string name="share_files">Share files</string>
 
     <!-- Permissions -->
     <string name="camera_permission_required">Permisiunea camerei este necesară pentru a face fotografii</string>
@@ -143,4 +144,5 @@
     <string name="menu_button_description">Deschide opțiunile meniului</string>
     <string name="camera_button_description">Fă o poză cu camera</string>
     <string name="gallery_button_description">Selectează imagine din galerie</string>
+
 </resources>

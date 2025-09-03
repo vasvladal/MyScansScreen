@@ -80,9 +80,10 @@ android {
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.example.kropimagecropper.v2"  // Changed package ID temporarily
-        minSdk = 29
-        targetSdk = 34
+        applicationId = "com.example.kropimagecropper"  // Changed package ID temporarily
+        minSdk = 26
+        //noinspection EditedTargetSdkVersion
+        targetSdk = 36
         versionCode = appVersionCode
         versionName = appVersionName  // Use short version here
 
