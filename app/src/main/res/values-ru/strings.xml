@@ -144,5 +144,9 @@
     <string name="menu_button_description">Открыть опции меню</string>
     <string name="camera_button_description">Сделать фото с помощью камеры</string>
     <string name="gallery_button_description">Выбрать изображение из галереи</string>
+    <string name="perspective_correction">Perspective Correction</string>
+    <string name="reset">Reset</string>
+    <string name="apply">Apply</string>
+    <string name="perspective_instructions">Drag the corners to align with the table edges</string>
 
 </resources>

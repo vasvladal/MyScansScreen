@@ -144,5 +144,9 @@
     <string name="menu_button_description">Deschide opțiunile meniului</string>
     <string name="camera_button_description">Fă o poză cu camera</string>
     <string name="gallery_button_description">Selectează imagine din galerie</string>
+    <string name="perspective_correction">Perspective Correction</string>
+    <string name="reset">Reset</string>
+    <string name="apply">Apply</string>
+    <string name="perspective_instructions">Drag the corners to align with the table edges</string>
 
 </resources>

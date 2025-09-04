@@ -248,4 +248,23 @@ object ScanManager {
             null
         }
     }
+
+    suspend fun saveCorrectedImage(context: Context, bitmap: Bitmap): String {
+        return withContext(Dispatchers.IO) {
+            val scansDir = getScansDirectory(context)
+            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val fileName = "SCAN_$timeStamp.jpg"
+            val scanFile = File(scansDir, fileName)
+
+            FileOutputStream(scanFile).use { outputStream ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                addToMediaStore(context, scanFile)
+            }
+
+            scanFile.absolutePath
+        }
+    }
 }

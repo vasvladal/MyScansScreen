@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "My Scans screen"
 include(":app")
+//include(":sdk")

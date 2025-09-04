@@ -4,6 +4,7 @@
 coil-compose = "2.7.0"
 compose-bom-version = "2025.08.01"
 fragment-ktx = "1.8.9"
+image = "4.6.2"
 kotlin = "2.2.10"
 compose-bom = "2025.08.01"
 compose-compiler = "1.5.8"
@@ -14,7 +15,7 @@ android-core-ktx = "1.17.0"
 android-lifecycle = "2.9.3"
 android-activity-compose = "1.10.1"
 
-# 🎯 KROP LIBRARY - FIXED VERSION AND COMPLETE SETUP
+# KROP LIBRARY - FIXED VERSION AND COMPLETE SETUP
 krop = "0.2.0"
 
 # Other libraries
@@ -29,18 +30,25 @@ androidx-test-ext-junit = "1.3.0"
 espresso-core = "3.7.0"
 material3 = "1.3.2"
 navigation-fragment-ktx = "2.9.3"
-navigation-fragment-ktx-version = "2.9.3"
 navigation-ui-ktx = "2.9.3"
-navigation-ui-ktx-version = "2.9.3"
+opencvVersion = "4.12.0"
 reorderable = "0.9.6"
 navigation-compose = "2.9.3"
-compileSdk="36"
+compileSdk = "36"
 
 profileinstaller = "1.4.1"
 appcompat = "1.7.1"
 
 markwon = "4.6.2"
+constraintlayoutCore = "1.1.1"
 
+# Clean annotation versions - no more conflicts
+jetbrains-annotations = "26.0.2-1"
+jsr305 = "3.0.2"
+auto-value = "1.10.4"
+
+# UI Automator for testing (alternative to appcrawler)
+uiautomator = "2.3.0"
 
 [libraries]
 # Android Core
@@ -55,8 +63,8 @@ androidx-activity-compose = { module = "androidx.activity:activity-compose" }
 androidx-compose-bom-v20240600 = { module = "androidx.compose:compose-bom", version.ref = "compose-bom-version" }
 androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragment-ktx" }
 androidx-material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
-androidx-navigation-fragment-ktx-v253 = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "navigation-fragment-ktx-version" }
-androidx-navigation-ui-ktx-v253 = { module = "androidx.navigation:navigation-ui-ktx", version.ref = "navigation-ui-ktx-version" }
+androidx-navigation-fragment-ktx-v253 = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "navigation-fragment-ktx" }
+androidx-navigation-ui-ktx-v253 = { module = "androidx.navigation:navigation-ui-ktx", version.ref = "navigation-ui-ktx" }
 coil-compose-v260 = { module = "io.coil-kt:coil-compose", version.ref = "coil-compose" }
 compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
 compose-ui = { group = "androidx.compose.ui", name = "ui" }
@@ -68,7 +76,8 @@ compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4
 compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 
-# 🎯 KROP LIBRARY DEPENDENCIES - COMPLETE AND FIXED
+# KROP LIBRARY DEPENDENCIES - COMPLETE AND FIXED
+image = { module = "io.noties.markwon:image", version.ref = "image" }
 krop-ui = { group = "com.attafitamim.krop", name = "ui", version.ref = "krop" }
 krop-core = { group = "com.attafitamim.krop", name = "core", version.ref = "krop" }
 krop-extensions-filekit = { group = "com.attafitamim.krop", name = "extensions-filekit", version.ref = "krop" }
@@ -94,6 +103,7 @@ androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso-core" }
 androidx-navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigation-fragment-ktx" }
 androidx-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigation-ui-ktx" }
+opencv-opencv = { module = "org.opencv:opencv", version.ref = "opencvVersion" }
 reorderable = { module = "org.burnoutcrew.composereorderable:reorderable", version.ref = "reorderable" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 
@@ -102,9 +112,14 @@ markwon-core = { module = "io.noties.markwon:core", version.ref = "markwon" }
 markwon-html = { module = "io.noties.markwon:html", version.ref = "markwon" }
 markwon-syntax = { module = "io.noties.markwon:syntax-highlight", version.ref = "markwon" }
 prism4j = { module = "io.noties:prism4j", version = "2.0.0" }
+androidx-constraintlayout-core = { group = "androidx.constraintlayout", name = "constraintlayout-core", version.ref = "constraintlayoutCore" }
 
+# Clean annotation dependencies
+jetbrains-annotations = { group = "org.jetbrains", name = "annotations", version.ref = "jetbrains-annotations" }
+jsr305 = { group = "com.google.code.findbugs", name = "jsr305", version.ref = "jsr305" }
 
-
+# UI Automator for app testing (replaces appcrawler)
+androidx-test-uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "android-gradle-plugin" }
@@ -112,7 +127,7 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 
 [bundles]
-# 🎯 KROP BUNDLE - COMPLETE WITH ALL NECESSARY DEPENDENCIES
+# KROP BUNDLE - COMPLETE WITH ALL NECESSARY DEPENDENCIES
 krop = ["krop-ui", "krop-core", "krop-extensions-filekit"]
 
 # Compose bundle
@@ -129,3 +144,6 @@ compose = [
 testing = ["junit"]
 android-testing = ["androidx-test-ext-junit", "espresso-core", "compose-ui-test-junit4"]
 debug-testing = ["compose-ui-tooling", "compose-ui-test-manifest"]
+
+# UI Testing bundle (replaces appcrawler functionality)
+ui-testing = ["androidx-test-uiautomator", "androidx-test-ext-junit"]

@@ -6,6 +6,7 @@ import android.Manifest
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -39,9 +40,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.kropimagecropper.R
 import com.example.kropimagecropper.data.ScanManager
-import com.example.kropimagecropper.ui.theme.Dimens
+import com.example.kropimagecropper.utils.OpenCVPerspectiveCorrector
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.rememberPermissionState
@@ -51,7 +51,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
-// Import Krop library components
+// Import Krop library components (keeping as fallback option)
 import com.attafitamim.krop.core.crop.*
 import com.attafitamim.krop.ui.ImageCropperDialog
 
@@ -69,8 +69,10 @@ fun ScannerScreen(onDone: () -> Unit) {
     var saveError by remember { mutableStateOf<String?>(null) }
     var saveLocation by remember { mutableStateOf<String?>(null) }
     var cameraTempUri by remember { mutableStateOf<Uri?>(null) }
+    var showCropOptions by remember { mutableStateOf(false) }
+    var isProcessing by remember { mutableStateOf(false) }
 
-    // Krop image cropper
+    // Krop image cropper (keeping as fallback)
     val imageCropper = rememberImageCropper()
 
     // String resources
@@ -135,7 +137,7 @@ fun ScannerScreen(onDone: () -> Unit) {
             // Verify the captured image exists and is valid
             val isValid = ScanManager.isValidImageUri(context, cameraTempUri!!)
             if (isValid) {
-                println("DEBUG: Captured image is valid, proceeding with crop")
+                println("DEBUG: Captured image is valid, proceeding with processing")
                 selectedImageUri = cameraTempUri
             } else {
                 println("DEBUG: Captured image is invalid")
@@ -161,10 +163,83 @@ fun ScannerScreen(onDone: () -> Unit) {
         }
     }
 
-    // Handle permission request result for gallery
-    LaunchedEffect(mediaPermissionsState.allPermissionsGranted) {
-        if (mediaPermissionsState.allPermissionsGranted && selectedImageUri != null) {
-            // Permission granted, proceed with gallery selection if needed
+    // OpenCV Perspective Correction Function
+    fun applyOpenCVPerspectiveCorrection(uri: Uri) {
+        scope.launch {
+            isProcessing = true
+            try {
+                withContext(Dispatchers.IO) {
+                    val inputStream = context.contentResolver.openInputStream(uri)
+                    val originalBitmap = BitmapFactory.decodeStream(inputStream)
+                    inputStream?.close()
+
+                    if (originalBitmap != null) {
+                        println("DEBUG: Starting OpenCV perspective correction")
+                        val correctedBitmap = OpenCVPerspectiveCorrector.correctPerspective(originalBitmap)
+
+                        withContext(Dispatchers.Main) {
+                            croppedImage = correctedBitmap.asImageBitmap()
+                            selectedImageUri = null
+                            showCropOptions = false
+                            isProcessing = false
+                            println("DEBUG: OpenCV perspective correction completed successfully")
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            saveError = "Failed to load image for processing"
+                            isProcessing = false
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    saveError = "Perspective correction failed: ${e.message}"
+                    isProcessing = false
+                    println("DEBUG: OpenCV perspective correction failed: ${e.message}")
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
+    // Fallback to Krop cropping
+    fun applyKropCropping(uri: Uri) {
+        scope.launch {
+            isProcessing = true
+            try {
+                println("DEBUG: Starting Krop cropping as fallback")
+                val result = imageCropper.crop(uri, context)
+
+                when (result) {
+                    is CropResult.Success -> {
+                        println("DEBUG: Krop crop successful")
+                        croppedImage = result.bitmap
+                        selectedImageUri = null
+                        showCropOptions = false
+                        isProcessing = false
+                    }
+                    is CropResult.Cancelled -> {
+                        println("DEBUG: Krop crop cancelled by user")
+                        selectedImageUri = null
+                        showCropOptions = false
+                        isProcessing = false
+                    }
+                    is CropError -> {
+                        println("DEBUG: Krop crop error occurred")
+                        selectedImageUri = null
+                        showCropOptions = false
+                        isProcessing = false
+                        saveError = "Crop operation failed. Please try again."
+                    }
+                }
+            } catch (e: Exception) {
+                println("DEBUG: Exception during Krop cropping: ${e.message}")
+                e.printStackTrace()
+                selectedImageUri = null
+                showCropOptions = false
+                isProcessing = false
+                saveError = "Crop error: ${e.message ?: "Unknown error"}. Please try again."
+            }
         }
     }
 
@@ -233,19 +308,13 @@ fun ScannerScreen(onDone: () -> Unit) {
         }
     }
 
-    // Handle cropping process with better validation and timing
+    // Handle image selection - show crop options
     LaunchedEffect(selectedImageUri) {
         selectedImageUri?.let { uri ->
             try {
-                println("DEBUG: Starting crop process for URI: $uri")
-                println("DEBUG: URI scheme: ${uri.scheme}")
-                println("DEBUG: URI path: ${uri.path}")
+                println("DEBUG: Image selected, validating: $uri")
+                kotlinx.coroutines.delay(1500) // Wait for file to be ready
 
-                // Add more substantial delay for camera captures to ensure file is completely written
-                println("DEBUG: Waiting for image file to be ready...")
-                kotlinx.coroutines.delay(1500) // Increased delay
-
-                // Validate URI multiple times with delays if needed
                 var isValid = false
                 var attempts = 0
                 while (!isValid && attempts < 5) {
@@ -259,7 +328,7 @@ fun ScannerScreen(onDone: () -> Unit) {
 
                 if (!isValid) {
                     selectedImageUri = null
-                    saveError = "Camera image not ready. Please try taking the photo again."
+                    saveError = "Image not ready or corrupted. Please try again."
                     scope.launch {
                         kotlinx.coroutines.delay(3000)
                         saveError = null
@@ -267,38 +336,14 @@ fun ScannerScreen(onDone: () -> Unit) {
                     return@let
                 }
 
-                println("DEBUG: Image validated successfully, starting crop operation...")
-                // Start cropping
-                val result = imageCropper.crop(uri, context)
-                println("DEBUG: Crop result type: ${result::class.simpleName}")
-
-                when (result) {
-                    is CropResult.Success -> {
-                        println("DEBUG: Crop successful, bitmap size: ${result.bitmap.width}x${result.bitmap.height}")
-                        croppedImage = result.bitmap
-                        selectedImageUri = null
-                    }
-                    is CropResult.Cancelled -> {
-                        println("DEBUG: Crop cancelled by user")
-                        selectedImageUri = null
-                    }
-                    is CropError -> {
-                        println("DEBUG: Crop error occurred")
-                        selectedImageUri = null
-                        saveError = "Crop operation failed. The image may be corrupted. Please try again."
-                        scope.launch {
-                            kotlinx.coroutines.delay(5000)
-                            saveError = null
-                        }
-                    }
-                }
+                println("DEBUG: Image validated successfully, showing crop options")
+                showCropOptions = true
             } catch (e: Exception) {
-                println("DEBUG: Exception during crop: ${e.message}")
-                e.printStackTrace()
+                println("DEBUG: Exception during image validation: ${e.message}")
                 selectedImageUri = null
-                saveError = "Crop error: ${e.message ?: "Unknown error"}. Please try again."
+                saveError = "Image processing error: ${e.message}"
                 scope.launch {
-                    kotlinx.coroutines.delay(5000)
+                    kotlinx.coroutines.delay(3000)
                     saveError = null
                 }
             }
@@ -329,7 +374,7 @@ fun ScannerScreen(onDone: () -> Unit) {
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Krop Cropper Dialog
+                // Krop Cropper Dialog (fallback)
                 imageCropper.cropState?.let { cropState ->
                     ImageCropperDialog(
                         state = cropState,
@@ -337,7 +382,29 @@ fun ScannerScreen(onDone: () -> Unit) {
                     )
                 }
 
-                // Loading indicator
+                // Processing indicator
+                if (isProcessing) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            CircularProgressIndicator()
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Correcting document perspective...",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+                }
+
+                // Krop loading indicator (fallback)
                 imageCropper.loadingStatus?.let { status ->
                     Card(
                         modifier = Modifier
@@ -360,6 +427,74 @@ fun ScannerScreen(onDone: () -> Unit) {
                             )
                         }
                     }
+                }
+
+                // Crop Options Dialog
+                if (showCropOptions && selectedImageUri != null && !isProcessing) {
+                    AlertDialog(
+                        onDismissRequest = {
+                            showCropOptions = false
+                            selectedImageUri = null
+                        },
+                        title = { Text("Document Processing") },
+                        text = {
+                            Column {
+                                Text("Choose how to process your document:")
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    "🔧 Smart Perspective Correction: Automatically detects and corrects document perspective (Recommended)",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    "✂️ Manual Crop: Traditional rectangular cropping with manual adjustment",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                )
+                            }
+                        },
+                        confirmButton = {
+                            Column {
+                                Button(
+                                    onClick = {
+                                        showCropOptions = false
+                                        applyOpenCVPerspectiveCorrection(selectedImageUri!!)
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                                ) {
+                                    Icon(Icons.Default.AutoFixHigh, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Smart Correction")
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                OutlinedButton(
+                                    onClick = {
+                                        showCropOptions = false
+                                        applyKropCropping(selectedImageUri!!)
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(Icons.Default.Crop, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Manual Crop")
+                                }
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(
+                                onClick = {
+                                    showCropOptions = false
+                                    selectedImageUri = null
+                                }
+                            ) {
+                                Text("Cancel")
+                            }
+                        }
+                    )
                 }
 
                 // Success message
@@ -410,7 +545,7 @@ fun ScannerScreen(onDone: () -> Unit) {
 
                 // Main content area
                 if (croppedImage != null) {
-                    // Show cropped image
+                    // Show processed image
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         elevation = CardDefaults.cardElevation(8.dp)
@@ -467,7 +602,11 @@ fun ScannerScreen(onDone: () -> Unit) {
                                 }
 
                                 OutlinedButton(
-                                    onClick = { croppedImage = null },
+                                    onClick = {
+                                        croppedImage = null
+                                        showCropOptions = false
+                                        selectedImageUri = null
+                                    },
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Icon(Icons.Default.Refresh, null, Modifier.size(20.dp))
@@ -525,7 +664,7 @@ fun ScannerScreen(onDone: () -> Unit) {
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = stringResource(R.string.take_a_photo),
+                                    text = "Capture or select a document image for smart perspective correction",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                                     textAlign = TextAlign.Center
@@ -534,14 +673,13 @@ fun ScannerScreen(onDone: () -> Unit) {
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // Camera button with improved error handling
+                            // Camera button
                             Button(
                                 onClick = {
                                     when {
                                         cameraPermission.status.isGranted -> {
                                             try {
                                                 println("DEBUG: Camera permission granted, creating temp URI")
-                                                // Clean up old temp files first
                                                 ScanManager.cleanupTempFiles(context)
 
                                                 val tempUri = ScanManager.createTempImageUri(context)
@@ -584,7 +722,7 @@ fun ScannerScreen(onDone: () -> Unit) {
                                 Text(stringResource(R.string.take_photo), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                             }
 
-                            // Gallery button with improved error handling and Android 14+ support
+                            // Gallery button
                             OutlinedButton(
                                 onClick = {
                                     when {
@@ -629,7 +767,7 @@ fun ScannerScreen(onDone: () -> Unit) {
                                 Text(stringResource(R.string.view_my_scans), fontWeight = FontWeight.Medium)
                             }
 
-                            // Permission status message with Android 14+ info
+                            // Permission status message
                             if (!mediaPermissionsState.allPermissionsGranted || !cameraPermission.status.isGranted) {
                                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f))) {
                                     Column(modifier = Modifier.padding(12.dp)) {
@@ -683,7 +821,7 @@ fun ScannerScreen(onDone: () -> Unit) {
     }
 }
 
-// Krop styling configuration
+// Krop styling configuration (keeping as fallback)
 @Composable
 fun createKropStyle() = cropperStyle(
     backgroundColor = Color.Black,
@@ -714,7 +852,7 @@ fun createKropStyle() = cropperStyle(
     )
 )
 
-// Gallery save functions
+// Gallery save functions (unchanged)
 suspend fun saveImageToGalleryQ(bitmap: Bitmap, context: Context, errorMessage: String): Uri? = withContext(Dispatchers.IO) {
     val contentValues = ContentValues().apply {
         put(MediaStore.MediaColumns.DISPLAY_NAME, "Scan_${System.currentTimeMillis()}.jpg")
