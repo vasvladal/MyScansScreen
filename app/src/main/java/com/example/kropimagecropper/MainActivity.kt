@@ -38,11 +38,17 @@ import com.example.kropimagecropper.utils.LanguageUtils
 import io.noties.markwon.Markwon
 import kotlinx.io.IOException
 import android.widget.TextView
+import org.opencv.android.OpenCVLoader
+import android.util.Log
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Initialize OpenCV before anything else
+        initOpenCV()
+
         // Apply saved language when activity starts
         LanguageUtils.applySavedLanguage(this)
 
@@ -254,6 +260,34 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    private fun initOpenCV() {
+        // Initialize OpenCV with static loading
+        if (OpenCVLoader.initDebug()) {
+            Log.d("OpenCV", "OpenCV loaded successfully")
+        } else {
+            Log.e("OpenCV", "OpenCV initialization failed!")
+            // For production, you might want to use OpenCV Manager
+            // OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION, this, mLoaderCallback)
+        }
+    }
+
+    // Alternative: Use OpenCV Manager for loading (requires OpenCV Manager app)
+    /*
+    private val mLoaderCallback = object : BaseLoaderCallback(this) {
+        override fun onManagerConnected(status: Int) {
+            when (status) {
+                LoaderCallbackInterface.SUCCESS -> {
+                    Log.d("OpenCV", "OpenCV loaded successfully")
+                }
+                else -> {
+                    super.onManagerConnected(status)
+                    Log.e("OpenCV", "OpenCV loading failed")
+                }
+            }
+        }
+    }
+    */
 }
 
 @Composable
