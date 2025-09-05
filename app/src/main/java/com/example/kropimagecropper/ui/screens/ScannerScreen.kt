@@ -51,7 +51,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
-// Import Krop library components (keeping as fallback option)
+// Import Krop library components
 import com.attafitamim.krop.core.crop.*
 import com.attafitamim.krop.ui.ImageCropperDialog
 
@@ -72,7 +72,7 @@ fun ScannerScreen(onDone: () -> Unit) {
     var showCropOptions by remember { mutableStateOf(false) }
     var isProcessing by remember { mutableStateOf(false) }
 
-    // Krop image cropper (keeping as fallback)
+    // Krop image cropper
     val imageCropper = rememberImageCropper()
 
     // String resources
@@ -109,7 +109,7 @@ fun ScannerScreen(onDone: () -> Unit) {
         permission = Manifest.permission.WRITE_EXTERNAL_STORAGE
     )
 
-    // Gallery picker with better error handling
+    // Gallery picker
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -127,7 +127,7 @@ fun ScannerScreen(onDone: () -> Unit) {
         }
     }
 
-    // Camera launcher with better error handling
+    // Camera launcher
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success: Boolean ->
@@ -180,14 +180,18 @@ fun ScannerScreen(onDone: () -> Unit) {
                         withContext(Dispatchers.Main) {
                             croppedImage = correctedBitmap.asImageBitmap()
                             selectedImageUri = null
-                            showCropOptions = false
+                            showCropOptions = true
                             isProcessing = false
                             println("DEBUG: OpenCV perspective correction completed successfully")
+
+                            // Show success message
+                            Toast.makeText(context, "Perspective correction applied successfully", Toast.LENGTH_SHORT).show()
                         }
                     } else {
                         withContext(Dispatchers.Main) {
                             saveError = "Failed to load image for processing"
                             isProcessing = false
+                            Toast.makeText(context, "Failed to load image", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -195,6 +199,7 @@ fun ScannerScreen(onDone: () -> Unit) {
                 withContext(Dispatchers.Main) {
                     saveError = "Perspective correction failed: ${e.message}"
                     isProcessing = false
+                    Toast.makeText(context, "Perspective correction failed: ${e.message}", Toast.LENGTH_LONG).show()
                     println("DEBUG: OpenCV perspective correction failed: ${e.message}")
                     e.printStackTrace()
                 }
@@ -374,7 +379,7 @@ fun ScannerScreen(onDone: () -> Unit) {
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Krop Cropper Dialog (fallback)
+                // Krop Cropper Dialog
                 imageCropper.cropState?.let { cropState ->
                     ImageCropperDialog(
                         state = cropState,
@@ -404,7 +409,7 @@ fun ScannerScreen(onDone: () -> Unit) {
                     }
                 }
 
-                // Krop loading indicator (fallback)
+                // Krop loading indicator
                 imageCropper.loadingStatus?.let { status ->
                     Card(
                         modifier = Modifier
@@ -821,7 +826,7 @@ fun ScannerScreen(onDone: () -> Unit) {
     }
 }
 
-// Krop styling configuration (keeping as fallback)
+// Krop styling configuration
 @Composable
 fun createKropStyle() = cropperStyle(
     backgroundColor = Color.Black,
@@ -852,7 +857,7 @@ fun createKropStyle() = cropperStyle(
     )
 )
 
-// Gallery save functions (unchanged)
+// Gallery save functions
 suspend fun saveImageToGalleryQ(bitmap: Bitmap, context: Context, errorMessage: String): Uri? = withContext(Dispatchers.IO) {
     val contentValues = ContentValues().apply {
         put(MediaStore.MediaColumns.DISPLAY_NAME, "Scan_${System.currentTimeMillis()}.jpg")
@@ -893,7 +898,8 @@ suspend fun saveImageToGalleryLegacy(bitmap: Bitmap, context: Context, errorMess
     }
 
     val resolver = context.contentResolver
-    val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues) ?: return@withContext null
+    val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+        ?: return@withContext null
 
     try {
         resolver.openOutputStream(uri)?.use { stream ->

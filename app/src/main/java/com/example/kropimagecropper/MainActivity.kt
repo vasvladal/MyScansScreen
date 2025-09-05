@@ -40,6 +40,7 @@ import kotlinx.io.IOException
 import android.widget.TextView
 import org.opencv.android.OpenCVLoader
 import android.util.Log
+import com.example.kropimagecropper.utils.OpenCVPerspectiveCorrector
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -265,6 +266,7 @@ class MainActivity : ComponentActivity() {
         // Initialize OpenCV with static loading
         if (OpenCVLoader.initDebug()) {
             Log.d("OpenCV", "OpenCV loaded successfully")
+            OpenCVPerspectiveCorrector.initializeOpenCV()
         } else {
             Log.e("OpenCV", "OpenCV initialization failed!")
             // For production, you might want to use OpenCV Manager

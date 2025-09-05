@@ -3,12 +3,14 @@
 package com.example.kropimagecropper.utils
 
 import android.graphics.Bitmap
+import android.graphics.Matrix
 import org.opencv.android.Utils
 import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sqrt
+import androidx.core.graphics.createBitmap
 
 class OpenCVPerspectiveCorrector {
 
@@ -19,7 +21,8 @@ class OpenCVPerspectiveCorrector {
          */
         fun initializeOpenCV(): Boolean {
             return try {
-                // OpenCV initialization will be handled by OpenCV Manager or static initialization
+                // This will load the OpenCV library
+                System.loadLibrary("opencv_java4")
                 true
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -28,7 +31,70 @@ class OpenCVPerspectiveCorrector {
         }
 
         /**
-         * Main function to correct perspective of a document image
+         * Apply perspective correction using manually selected points
+         */
+        fun correctPerspectiveWithPoints(bitmap: Bitmap, points: PerspectivePoints): Bitmap {
+            return try {
+                // Convert bitmap to OpenCV Mat
+                val src = Mat()
+                Utils.bitmapToMat(bitmap, src)
+
+                // Convert normalized points to image coordinates
+                val srcPoints = MatOfPoint2f(
+                    Point((points.topLeft.x * bitmap.width).toDouble(),
+                        (points.topLeft.y * bitmap.height).toDouble()
+                    ),
+                    Point((points.topRight.x * bitmap.width).toDouble(),
+                        (points.topRight.y * bitmap.height).toDouble()
+                    ),
+                    Point((points.bottomRight.x * bitmap.width).toDouble(),
+                        (points.bottomRight.y * bitmap.height).toDouble()
+                    ),
+                    Point((points.bottomLeft.x * bitmap.width).toDouble(),
+                        (points.bottomLeft.y * bitmap.height).toDouble()
+                    )
+                )
+
+                // Destination points (the entire bitmap)
+                val dstPoints = MatOfPoint2f(
+                    Point(0.0, 0.0),
+                    Point(bitmap.width.toDouble(), 0.0),
+                    Point(bitmap.width.toDouble(), bitmap.height.toDouble()),
+                    Point(0.0, bitmap.height.toDouble())
+                )
+
+                // Get transformation matrix using getPerspectiveTransform (equivalent to cv2.getPerspectiveTransform)
+                val matrix = Imgproc.getPerspectiveTransform(srcPoints, dstPoints)
+
+                // Apply perspective transformation using warpPerspective (equivalent to cv2.warpPerspective)
+                val warped = Mat()
+                Imgproc.warpPerspective(
+                    src,
+                    warped,
+                    matrix,
+                    Size(bitmap.width.toDouble(), bitmap.height.toDouble())
+                )
+
+                // Convert back to bitmap
+                val resultBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
+                Utils.matToBitmap(warped, resultBitmap)
+
+                // Clean up
+                src.release()
+                srcPoints.release()
+                dstPoints.release()
+                matrix.release()
+                warped.release()
+
+                resultBitmap
+            } catch (e: Exception) {
+                e.printStackTrace()
+                bitmap // Return original bitmap if correction fails
+            }
+        }
+
+        /**
+         * Main function to correct perspective of a document image (automatic detection)
          */
         fun correctPerspective(bitmap: Bitmap): Bitmap {
             return try {
@@ -38,7 +104,7 @@ class OpenCVPerspectiveCorrector {
 
                 // Convert to grayscale for edge detection
                 val gray = Mat()
-                Imgproc.cvtColor(src, gray, Imgproc.COLOR_BGR2GRAY)
+                Imgproc.cvtColor(src, gray, Imgproc.COLOR_RGB2GRAY)
 
                 // Apply Gaussian blur to reduce noise
                 val blurred = Mat()
@@ -56,53 +122,39 @@ class OpenCVPerspectiveCorrector {
                 // Find the largest rectangular contour
                 val documentContour = findLargestRectangularContour(contours)
 
-                if (documentContour != null) {
+                val result = if (documentContour != null) {
                     // Apply perspective transformation
                     val corrected = applyPerspectiveTransform(src, documentContour)
 
                     // Convert back to bitmap
-                    val resultBitmap = Bitmap.createBitmap(
-                        corrected.cols(),
-                        corrected.rows(),
-                        Bitmap.Config.ARGB_8888
-                    )
+                    val resultBitmap = createBitmap(corrected.cols(), corrected.rows())
                     Utils.matToBitmap(corrected, resultBitmap)
-
-                    // Clean up
-                    src.release()
-                    gray.release()
-                    blurred.release()
-                    edges.release()
-                    hierarchy.release()
                     corrected.release()
-
-                    return resultBitmap
+                    resultBitmap
                 } else {
                     // If no good contour found, try to enhance the original image
                     val enhanced = enhanceDocument(src)
 
-                    val resultBitmap = Bitmap.createBitmap(
-                        enhanced.cols(),
-                        enhanced.rows(),
-                        Bitmap.Config.ARGB_8888
-                    )
+                    val resultBitmap = createBitmap(enhanced.cols(), enhanced.rows())
                     Utils.matToBitmap(enhanced, resultBitmap)
-
-                    // Clean up
-                    src.release()
-                    gray.release()
-                    blurred.release()
-                    edges.release()
-                    hierarchy.release()
                     enhanced.release()
-
-                    return resultBitmap
+                    resultBitmap
                 }
+
+                // Clean up
+                src.release()
+                gray.release()
+                blurred.release()
+                edges.release()
+                hierarchy.release()
+                documentContour?.release()
+
+                result
 
             } catch (e: Exception) {
                 e.printStackTrace()
                 // If OpenCV processing fails, return the original bitmap
-                return bitmap
+                bitmap
             }
         }
 
@@ -117,7 +169,7 @@ class OpenCVPerspectiveCorrector {
                 val area = Imgproc.contourArea(contour)
 
                 // Filter out small areas
-                if (area > 10000) {
+                if (area > 1000) {
                     val contour2f = MatOfPoint2f()
                     contour.convertTo(contour2f, CvType.CV_32FC2)
 
@@ -132,14 +184,12 @@ class OpenCVPerspectiveCorrector {
                         if (isRectangularEnough(approx)) {
                             maxArea = area
                             bestContour?.release()
-                            bestContour = approx
+                            bestContour = approx.clone() as MatOfPoint2f?
                         }
                     }
 
                     contour2f.release()
-                    if (approx != bestContour) {
-                        approx.release()
-                    }
+                    approx.release()
                 }
             }
 
@@ -168,7 +218,7 @@ class OpenCVPerspectiveCorrector {
             }
 
             // Check if angles are close to 90 degrees (allow some tolerance)
-            return angles.all { abs(it - 90.0) < 30.0 } // 30 degree tolerance
+            return angles.all { abs(it - 90.0) < 45.0 }
         }
 
         /**
@@ -178,6 +228,8 @@ class OpenCVPerspectiveCorrector {
             val dot = v1.x * v2.x + v1.y * v2.y
             val mag1 = sqrt(v1.x * v1.x + v1.y * v1.y)
             val mag2 = sqrt(v2.x * v2.x + v2.y * v2.y)
+
+            if (mag1 == 0.0 || mag2 == 0.0) return 0.0
 
             val cos = dot / (mag1 * mag2)
             val clampedCos = cos.coerceIn(-1.0, 1.0)
@@ -203,23 +255,25 @@ class OpenCVPerspectiveCorrector {
             val maxHeight = maxOf(heightA, heightB).toInt()
 
             // Ensure minimum dimensions
-            val finalWidth = maxOf(maxWidth, 200)
-            val finalHeight = maxOf(maxHeight, 200)
+            val finalWidth = maxOf(maxWidth, 300)
+            val finalHeight = maxOf(maxHeight, 300)
 
             // Define destination points (rectangle)
             val dst = MatOfPoint2f()
             dst.fromArray(
-                Point(0.0, 0.0),                           // Top-left
-                Point(finalWidth - 1.0, 0.0),              // Top-right
-                Point(finalWidth - 1.0, finalHeight - 1.0), // Bottom-right
-                Point(0.0, finalHeight - 1.0)              // Bottom-left
+                Point(0.0, 0.0),
+                Point(finalWidth - 1.0, 0.0),
+                Point(finalWidth - 1.0, finalHeight - 1.0),
+                Point(0.0, finalHeight - 1.0)
             )
 
-            // Get transformation matrix and apply it
+            // Get transformation matrix using getPerspectiveTransform
             val srcPoints = MatOfPoint2f()
             srcPoints.fromArray(*orderedPoints)
 
             val matrix = Imgproc.getPerspectiveTransform(srcPoints, dst)
+
+            // Apply perspective transformation using warpPerspective
             val warped = Mat()
             Imgproc.warpPerspective(
                 src,
@@ -235,6 +289,45 @@ class OpenCVPerspectiveCorrector {
 
             return warped
         }
+
+
+        /**
+         * Apply rotation to the image after perspective correction
+         */
+        fun applyRotation(bitmap: Bitmap, angle: Float): Bitmap {
+            return try {
+                val matrix = Matrix()
+                matrix.postRotate(angle)
+
+                Bitmap.createBitmap(
+                    bitmap,
+                    0, 0,
+                    bitmap.width, bitmap.height,
+                    matrix,
+                    true
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+                bitmap
+            }
+        }
+
+        /**
+         * Apply perspective correction with optional rotation
+         */
+        fun correctPerspectiveWithPointsAndRotation(
+            bitmap: Bitmap,
+            points: PerspectivePoints,
+            rotationAngle: Float = 0f
+        ): Bitmap {
+            val perspectiveCorrected = correctPerspectiveWithPoints(bitmap, points)
+            return if (rotationAngle != 0f) {
+                applyRotation(perspectiveCorrected, rotationAngle)
+            } else {
+                perspectiveCorrected
+            }
+        }
+
 
         /**
          * Order points in the sequence: top-left, top-right, bottom-right, bottom-left
@@ -278,31 +371,37 @@ class OpenCVPerspectiveCorrector {
         private fun enhanceDocument(src: Mat): Mat {
             val enhanced = Mat()
 
-            // Convert to LAB color space for better contrast enhancement
-            val lab = Mat()
-            Imgproc.cvtColor(src, lab, Imgproc.COLOR_BGR2Lab)
+            try {
+                // Convert to LAB color space for better contrast enhancement
+                val lab = Mat()
+                Imgproc.cvtColor(src, lab, Imgproc.COLOR_RGB2Lab)
 
-            // Split channels
-            val channels = mutableListOf<Mat>()
-            Core.split(lab, channels)
+                // Split channels
+                val channels = mutableListOf<Mat>()
+                Core.split(lab, channels)
 
-            // Apply CLAHE (Contrast Limited Adaptive Histogram Equalization) to L channel
-            val clahe = Imgproc.createCLAHE()
-            clahe.clipLimit = 2.0
-            clahe.tilesGridSize = Size(8.0, 8.0)
+                // Apply CLAHE (Contrast Limited Adaptive Histogram Equalization) to L channel
+                val clahe = Imgproc.createCLAHE()
+                clahe.clipLimit = 2.0
+                clahe.tilesGridSize = Size(8.0, 8.0)
 
-            val lChannel = channels[0]
-            clahe.apply(lChannel, lChannel)
+                val lChannel = channels[0]
+                clahe.apply(lChannel, lChannel)
 
-            // Merge channels back
-            Core.merge(channels, lab)
+                // Merge channels back
+                Core.merge(channels, lab)
 
-            // Convert back to BGR
-            Imgproc.cvtColor(lab, enhanced, Imgproc.COLOR_Lab2BGR)
+                // Convert back to RGB
+                Imgproc.cvtColor(lab, enhanced, Imgproc.COLOR_Lab2RGB)
 
-            // Clean up
-            lab.release()
-            channels.forEach { it.release() }
+                // Clean up
+                lab.release()
+                channels.forEach { it.release() }
+
+            } catch (e: Exception) {
+                // If enhancement fails, just copy the source
+                src.copyTo(enhanced)
+            }
 
             return enhanced
         }
