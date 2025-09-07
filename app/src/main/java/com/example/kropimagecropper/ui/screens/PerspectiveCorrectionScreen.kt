@@ -1,14 +1,11 @@
 package com.example.kropimagecropper.ui.screens
 
 import android.graphics.Bitmap
-import android.graphics.PointF
 import android.net.Uri
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -16,7 +13,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -30,12 +26,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.kropimagecropper.R
+import com.example.kropimagecropper.utils.CustomPoint
 import com.example.kropimagecropper.utils.OpenCVPerspectiveCorrector
 import com.example.kropimagecropper.utils.PerspectivePoints
 import kotlinx.coroutines.Dispatchers
@@ -108,16 +102,17 @@ fun PerspectiveCorrectionScreen(
 
                 try {
                     withContext(Dispatchers.IO) {
-                        val points = PerspectivePoints(
-                            topLeft = topLeft,
-                            topRight = topRight,
-                            bottomRight = bottomRight,
-                            bottomLeft = bottomLeft
+                        // Convert PerspectivePoints to List<CustomPoint>
+                        val pointsList = listOf(
+                            CustomPoint(topLeft.x, topLeft.y),
+                            CustomPoint(topRight.x, topRight.y),
+                            CustomPoint(bottomRight.x, bottomRight.y),
+                            CustomPoint(bottomLeft.x, bottomLeft.y)
                         )
 
                         val androidBitmap = bitmap.asAndroidBitmap()
                         val correctedAndroidBitmap = OpenCVPerspectiveCorrector.correctPerspectiveWithPoints(
-                            androidBitmap, points
+                            androidBitmap, pointsList
                         )
 
                         withContext(Dispatchers.Main) {

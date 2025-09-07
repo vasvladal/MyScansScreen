@@ -1,5 +1,3 @@
-// File: app/src/main/java/com/example/kropimagecropper/ui/screens/ScannerScreen.kt
-
 package com.example.kropimagecropper.ui.screens
 
 import android.Manifest
@@ -41,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.example.kropimagecropper.R
 import com.example.kropimagecropper.data.ScanManager
 import com.example.kropimagecropper.utils.OpenCVPerspectiveCorrector
+import com.example.kropimagecropper.utils.CustomPoint // Import the corrected CustomPoint
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
@@ -57,8 +56,11 @@ import com.attafitamim.krop.ui.ImageCropperDialog
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
-fun ScannerScreen(onDone: () -> Unit,
-                  onNavigateToPerspective: ((Bitmap) -> Unit)? = null ) {
+fun ScannerScreen(
+    onDone: () -> Unit,
+    onNavigateToPerspective: ((Bitmap) -> Unit)? = null,
+    perspectivePoints: List<CustomPoint>? = null // Change to CustomPoint
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
@@ -165,7 +167,7 @@ fun ScannerScreen(onDone: () -> Unit,
         }
     }
 
-    // OpenCV Perspective Correction Function
+    // OpenCV Perspective Correction Function - Now uses user-selected points
     fun applyOpenCVPerspectiveCorrection(uri: Uri) {
         scope.launch {
             isProcessing = true
@@ -177,7 +179,15 @@ fun ScannerScreen(onDone: () -> Unit,
 
                     if (originalBitmap != null) {
                         println("DEBUG: Starting OpenCV perspective correction")
-                        val correctedBitmap = OpenCVPerspectiveCorrector.correctPerspective(originalBitmap)
+
+                        // Use user-selected points if available, otherwise fall back to automatic detection
+                        val correctedBitmap = if (perspectivePoints != null && perspectivePoints.size == 4) {
+                            println("DEBUG: Using user-selected points for perspective correction")
+                            OpenCVPerspectiveCorrector.correctPerspectiveWithPoints(originalBitmap, perspectivePoints)
+                        } else {
+                            println("DEBUG: Using automatic perspective detection")
+                            OpenCVPerspectiveCorrector.correctPerspective(originalBitmap)
+                        }
 
                         withContext(Dispatchers.Main) {
                             croppedImage = correctedBitmap.asImageBitmap()
@@ -201,7 +211,8 @@ fun ScannerScreen(onDone: () -> Unit,
                 withContext(Dispatchers.Main) {
                     saveError = "Perspective correction failed: ${e.message}"
                     isProcessing = false
-                    Toast.makeText(context, "Perspective correction failed: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context,
+                        context.getString(R.string.perspective_correction_failed, e.message), Toast.LENGTH_LONG).show()
                     println("DEBUG: OpenCV perspective correction failed: ${e.message}")
                     e.printStackTrace()
                 }
@@ -961,3 +972,6 @@ suspend fun saveImageToGalleryLegacy(bitmap: Bitmap, context: Context, errorMess
         throw e
     }
 }
+
+// Data class for representing points
+data class Point(val x: Float, val y: Float)

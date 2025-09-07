@@ -6,12 +6,13 @@ import android.util.Log
 import org.opencv.android.Utils
 import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
-import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.pow
 import kotlin.math.sqrt
-import androidx.core.graphics.createBitmap
 import java.util.ArrayList
+
+// Data class to represent a point (using a different name to avoid conflict with OpenCV Point)
+data class CustomPoint(val x: Float, val y: Float)
 
 class OpenCVPerspectiveCorrector {
 
@@ -33,31 +34,34 @@ class OpenCVPerspectiveCorrector {
             }
         }
 
+
         /**
          * Apply perspective correction using manually selected points
          */
-        fun correctPerspectiveWithPoints(bitmap: Bitmap, points: PerspectivePoints): Bitmap {
+        fun correctPerspectiveWithPoints(bitmap: Bitmap, points: List<CustomPoint>): Bitmap {
             return try {
                 Log.d(TAG, "Starting perspective correction with manual points")
+
+                // Validate input points
+                if (points.size != 4) {
+                    Log.e(TAG, "Exactly 4 points required for perspective correction, got ${points.size}")
+                    return bitmap
+                }
 
                 // Convert bitmap to OpenCV Mat
                 val src = Mat()
                 Utils.bitmapToMat(bitmap, src)
 
-                // Convert normalized points to image coordinates
+                // Convert CustomPoints to OpenCV Points
                 val srcPoints = MatOfPoint2f(
-                    Point((points.topLeft.x * bitmap.width).toDouble(),
-                        (points.topLeft.y * bitmap.height).toDouble()
-                    ),
-                    Point((points.topRight.x * bitmap.width).toDouble(),
-                        (points.topRight.y * bitmap.height).toDouble()
-                    ),
-                    Point((points.bottomRight.x * bitmap.width).toDouble(),
-                        (points.bottomRight.y * bitmap.height).toDouble()
-                    ),
-                    Point((points.bottomLeft.x * bitmap.width).toDouble(),
-                        (points.bottomLeft.y * bitmap.height).toDouble()
-                    )
+                    Point(points[0].x * bitmap.width.toDouble(),
+                        points[0].y * bitmap.height.toDouble()),
+                    Point(points[1].x * bitmap.width.toDouble(),
+                        points[1].y * bitmap.height.toDouble()),
+                    Point(points[2].x * bitmap.width.toDouble(),
+                        points[2].y * bitmap.height.toDouble()),
+                    Point(points[3].x * bitmap.width.toDouble(),
+                        points[3].y * bitmap.height.toDouble())
                 )
 
                 // Destination points (the entire bitmap)
@@ -530,7 +534,7 @@ class OpenCVPerspectiveCorrector {
          */
         fun correctPerspectiveWithPointsAndRotation(
             bitmap: Bitmap,
-            points: PerspectivePoints,
+            points: List<CustomPoint>, // Changed from List<Point>
             rotationAngle: Float = 0f
         ): Bitmap {
             val perspectiveCorrected = correctPerspectiveWithPoints(bitmap, points)

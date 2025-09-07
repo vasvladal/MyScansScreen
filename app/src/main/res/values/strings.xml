@@ -154,5 +154,6 @@
     <string name="document_processing">Document Processing</string>
     <string name="smart_perspective_correction_automatically_detects_and_corrects_document_perspective_recommended">🔧 Smart Perspective Correction: Automatically detects and corrects document perspective (Recommended)</string>
     <string name="camera_captured_an_invalid_image_please_try_again">Camera captured an invalid image. Please try again.</string>
+    <string name="perspective_correction_failed">Perspective correction failed: %1$s</string>
 
 </resources>
