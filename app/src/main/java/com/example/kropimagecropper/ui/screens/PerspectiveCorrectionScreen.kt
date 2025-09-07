@@ -1,124 +1,199 @@
-// File: app/src/main/java/com/example/kropimagecropper/ui/screens/PerspectiveCorrectionScreen.kt
 package com.example.kropimagecropper.ui.screens
 
 import android.graphics.Bitmap
 import android.graphics.PointF
+import android.net.Uri
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Restore
-import androidx.compose.material.icons.filled.RotateLeft
-import androidx.compose.material.icons.filled.RotateRight
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.kropimagecropper.R
 import com.example.kropimagecropper.utils.OpenCVPerspectiveCorrector
 import com.example.kropimagecropper.utils.PerspectivePoints
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.opencv.android.Utils
-import org.opencv.core.Core
-import org.opencv.core.Mat
-import org.opencv.core.MatOfPoint2f
-import org.opencv.core.Point
-import org.opencv.core.Size as OpenCVSize
-import org.opencv.imgproc.Imgproc
-import kotlin.math.max
-import kotlin.math.min
-
-// Enum to identify which corner is being dragged
-enum class Corner { TOP_LEFT, TOP_RIGHT, BOTTOM_RIGHT, BOTTOM_LEFT }
+import kotlin.math.sqrt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PerspectiveCorrectionScreen(
-    originalBitmap: Bitmap,
-    onCorrected: (Bitmap) -> Unit,
-    onBack: () -> Unit
+    imageUri: Uri,
+    onResult: (Bitmap) -> Unit,
+    onCancel: () -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var perspectivePoints by remember { mutableStateOf(PerspectivePoints()) }
-    var selectedCorner by remember { mutableStateOf<Corner?>(null) }
-    var isProcessing by remember { mutableStateOf(false) }
-    var rotationAngle by remember { mutableStateOf(0f) }
+    val density = LocalDensity.current
 
-    // Convert bitmap to ImageBitmap for Compose
-    val imageBitmap = remember(originalBitmap) {
-        originalBitmap.asImageBitmap()
+    // State variables
+    var originalBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+    var correctedBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+    var isProcessing by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var imageSize by remember { mutableStateOf(IntSize.Zero) }
+    var canvasSize by remember { mutableStateOf(IntSize.Zero) }
+    var imageDisplaySize by remember { mutableStateOf(IntSize.Zero) }
+    var imageScale by remember { mutableStateOf(1f) }
+    var imageOffset by remember { mutableStateOf(Offset.Zero) }
+
+    // Corner points for manual adjustment (normalized 0-1)
+    var topLeft by remember { mutableStateOf(Offset(0.1f, 0.1f)) }
+    var topRight by remember { mutableStateOf(Offset(0.9f, 0.1f)) }
+    var bottomRight by remember { mutableStateOf(Offset(0.9f, 0.9f)) }
+    var bottomLeft by remember { mutableStateOf(Offset(0.1f, 0.9f)) }
+
+    // Load original image
+    LaunchedEffect(imageUri) {
+        scope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    val inputStream = context.contentResolver.openInputStream(imageUri)
+                    val bitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
+                    inputStream?.close()
+
+                    if (bitmap != null) {
+                        withContext(Dispatchers.Main) {
+                            originalBitmap = bitmap.asImageBitmap()
+                            imageSize = IntSize(bitmap.width, bitmap.height)
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            errorMessage = "Failed to load image"
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    errorMessage = "Error loading image: ${e.message}"
+                }
+            }
+        }
+    }
+
+    // Function to apply perspective correction
+    fun applyCorrection() {
+        originalBitmap?.let { bitmap ->
+            scope.launch {
+                isProcessing = true
+                errorMessage = null
+
+                try {
+                    withContext(Dispatchers.IO) {
+                        val points = PerspectivePoints(
+                            topLeft = topLeft,
+                            topRight = topRight,
+                            bottomRight = bottomRight,
+                            bottomLeft = bottomLeft
+                        )
+
+                        val androidBitmap = bitmap.asAndroidBitmap()
+                        val correctedAndroidBitmap = OpenCVPerspectiveCorrector.correctPerspectiveWithPoints(
+                            androidBitmap, points
+                        )
+
+                        withContext(Dispatchers.Main) {
+                            correctedBitmap = correctedAndroidBitmap.asImageBitmap()
+                            isProcessing = false
+                        }
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        errorMessage = "Correction failed: ${e.message}"
+                        isProcessing = false
+                    }
+                }
+            }
+        }
+    }
+
+    // Function to reset points to auto-detected or default positions
+    fun resetPoints() {
+        topLeft = Offset(0.1f, 0.1f)
+        topRight = Offset(0.9f, 0.1f)
+        bottomRight = Offset(0.9f, 0.9f)
+        bottomLeft = Offset(0.1f, 0.9f)
+    }
+
+    // Function to auto-detect corners (simplified version)
+    fun autoDetectCorners() {
+        originalBitmap?.let { bitmap ->
+            scope.launch {
+                try {
+                    withContext(Dispatchers.IO) {
+                        val androidBitmap = bitmap.asAndroidBitmap()
+                        // This would ideally use the automatic detection from OpenCV
+                        // For now, we'll set reasonable default positions
+                        withContext(Dispatchers.Main) {
+                            topLeft = Offset(0.05f, 0.05f)
+                            topRight = Offset(0.95f, 0.05f)
+                            bottomRight = Offset(0.95f, 0.95f)
+                            bottomLeft = Offset(0.05f, 0.95f)
+                        }
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        errorMessage = "Auto-detection failed: ${e.message}"
+                    }
+                }
+            }
+        }
+    }
+
+    // Helper function to calculate scale
+    fun calculateScale(container: IntSize, image: IntSize): Float {
+        val widthScale = container.width / image.width.toFloat()
+        val heightScale = container.height / image.height.toFloat()
+        return minOf(widthScale, heightScale)
     }
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(stringResource(R.string.perspective_correction)) },
+            TopAppBar(
+                title = { Text("Perspective Correction") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back)
-                        )
+                    IconButton(onClick = onCancel) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 },
                 actions = {
-                    IconButton(
-                        onClick = {
-                            perspectivePoints = PerspectivePoints()
-                            selectedCorner = null
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Restore,
-                            contentDescription = stringResource(R.string.reset)
-                        )
-                    }
-                    IconButton(
-                        onClick = {
-                            scope.launch {
-                                isProcessing = true
-                                try {
-                                    val corrected = applyPerspectiveCorrection(
-                                        originalBitmap,
-                                        perspectivePoints,
-                                        rotationAngle
-                                    )
-                                    onCorrected(corrected)
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                    // If correction fails, return original
-                                    onCorrected(originalBitmap)
-                                } finally {
-                                    isProcessing = false
+                    if (correctedBitmap != null) {
+                        TextButton(
+                            onClick = {
+                                correctedBitmap?.let { bitmap ->
+                                    onResult(bitmap.asAndroidBitmap())
                                 }
                             }
-                        },
-                        enabled = !isProcessing
-                    ) {
-                        if (isProcessing) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = stringResource(R.string.apply)
-                            )
+                        ) {
+                            Text("Done", fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -129,328 +204,309 @@ fun PerspectiveCorrectionScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Add rotation controls
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
+            // Error message
+            errorMessage?.let { error ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
                 ) {
                     Text(
-                        text = "Rotation Adjustment",
-                        style = MaterialTheme.typography.titleMedium
+                        text = error,
+                        modifier = Modifier.padding(16.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+
+            // Processing indicator
+            if (isProcessing) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
                     Row(
+                        modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(
-                            onClick = { rotationAngle = (rotationAngle - 90f) % 360f }
-                        ) {
-                            Icon(Icons.Default.RotateLeft, contentDescription = "Rotate Left")
-                        }
-
-                        Slider(
-                            value = rotationAngle,
-                            onValueChange = { rotationAngle = it },
-                            valueRange = -180f..180f,
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        IconButton(
-                            onClick = { rotationAngle = (rotationAngle + 90f) % 360f }
-                        ) {
-                            Icon(Icons.Default.RotateRight, contentDescription = "Rotate Right")
-                        }
-
-                        Text(
-                            text = "${rotationAngle.toInt()}°",
-                            modifier = Modifier.width(40.dp)
-                        )
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Processing perspective correction...")
                     }
                 }
             }
-            PerspectiveCorrectionCanvas(
-                imageBitmap = imageBitmap,
-                perspectivePoints = perspectivePoints,
-                selectedCorner = selectedCorner,
-                onCornerSelected = { corner -> selectedCorner = corner },
-                onCornerMoved = { corner, offset ->
-                    perspectivePoints = when (corner) {
-                        Corner.TOP_LEFT -> perspectivePoints.copy(
-                            topLeft = PointF(
-                                max(0f, min(1f, perspectivePoints.topLeft.x + offset.x)),
-                                max(0f, min(1f, perspectivePoints.topLeft.y + offset.y))
-                            )
-                        )
-                        Corner.TOP_RIGHT -> perspectivePoints.copy(
-                            topRight = PointF(
-                                max(0f, min(1f, perspectivePoints.topRight.x + offset.x)),
-                                max(0f, min(1f, perspectivePoints.topRight.y + offset.y))
-                            )
-                        )
-                        Corner.BOTTOM_RIGHT -> perspectivePoints.copy(
-                            bottomRight = PointF(
-                                max(0f, min(1f, perspectivePoints.bottomRight.x + offset.x)),
-                                max(0f, min(1f, perspectivePoints.bottomRight.y + offset.y))
-                            )
-                        )
-                        Corner.BOTTOM_LEFT -> perspectivePoints.copy(
-                            bottomLeft = PointF(
-                                max(0f, min(1f, perspectivePoints.bottomLeft.x + offset.x)),
-                                max(0f, min(1f, perspectivePoints.bottomLeft.y + offset.y))
-                            )
-                        )
-                    }
-                },
-                onDragEnd = { selectedCorner = null }
-            )
 
-            // Instructions
-            Text(
-                text = stringResource(R.string.perspective_instructions),
-                modifier = Modifier
-                    .align(Alignment.BottomCenter as Alignment.Horizontal)
-                    .padding(16.dp),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-            )
-        }
-    }
-}
+            // Image display area
+            originalBitmap?.let { bitmap ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(bottom = 16.dp),
+                    elevation = CardDefaults.cardElevation(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(8.dp)
+                    ) {
+                        if (correctedBitmap != null) {
+                            // Show corrected image
+                            Image(
+                                bitmap = correctedBitmap!!,
+                                contentDescription = "Corrected Image",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Fit
+                            )
+                        } else {
+                            // Show original image with corner points overlay
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                Image(
+                                    bitmap = bitmap,
+                                    contentDescription = "Original Image",
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .onSizeChanged { containerSize ->
+                                            // Calculate actual displayed image size and scale
+                                            val scale = calculateScale(containerSize, imageSize)
+                                            val displayedSize = IntSize(
+                                                (imageSize.width * scale).toInt(),
+                                                (imageSize.height * scale).toInt()
+                                            )
+                                            val offset = Offset(
+                                                (containerSize.width - displayedSize.width) / 2f,
+                                                (containerSize.height - displayedSize.height) / 2f
+                                            )
 
-@Composable
-fun PerspectiveCorrectionCanvas(
-    imageBitmap: ImageBitmap,
-    perspectivePoints: PerspectivePoints,
-    selectedCorner: Corner?,
-    onCornerSelected: (Corner) -> Unit,
-    onCornerMoved: (Corner, Offset) -> Unit,
-    onDragEnd: () -> Unit
-) {
-    var canvasSize by remember { mutableStateOf(IntSize.Zero) }
+                                            imageDisplaySize = displayedSize
+                                            imageScale = scale
+                                            imageOffset = offset
+                                        },
+                                    contentScale = ContentScale.Fit
+                                )
 
-    Canvas(
-        modifier = Modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                detectDragGestures(
-                    onDragStart = { offset ->
-                        // Find which corner was touched
-                        val corners = listOf(
-                            Corner.TOP_LEFT to perspectivePoints.topLeft,
-                            Corner.TOP_RIGHT to perspectivePoints.topRight,
-                            Corner.BOTTOM_RIGHT to perspectivePoints.bottomRight,
-                            Corner.BOTTOM_LEFT to perspectivePoints.bottomLeft
-                        )
+                                // Overlay canvas for corner points
+                                Canvas(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .onSizeChanged { size ->
+                                            canvasSize = size
+                                        }
+                                        .pointerInput(Unit) {
+                                            detectDragGestures { change, _ ->
+                                                val rawPosition = change.position
+                                                // Convert screen coordinates to image coordinates
+                                                val imageX = (rawPosition.x - imageOffset.x) / imageScale
+                                                val imageY = (rawPosition.y - imageOffset.y) / imageScale
 
-                        corners.forEach { (corner, point) ->
-                            val cornerX = point.x * size.width
-                            val cornerY = point.y * size.height
-                            val dx = offset.x - cornerX
-                            val dy = offset.y - cornerY
-                            val distance = dx * dx + dy * dy
-                            if (distance < 1600f) { // 40px radius squared
-                                onCornerSelected(corner)
-                                return@detectDragGestures
+                                                // Normalize coordinates
+                                                val position = Offset(
+                                                    (imageX / imageSize.width).coerceIn(0f, 1f),
+                                                    (imageY / imageSize.height).coerceIn(0f, 1f)
+                                                )
+
+                                                // Find closest corner and update it
+                                                val corners = listOf(
+                                                    topLeft to { offset: Offset -> topLeft = offset },
+                                                    topRight to { offset: Offset -> topRight = offset },
+                                                    bottomRight to { offset: Offset -> bottomRight = offset },
+                                                    bottomLeft to { offset: Offset -> bottomLeft = offset }
+                                                )
+
+                                                val closest = corners.minByOrNull { (corner, _) ->
+                                                    val dx = corner.x - position.x
+                                                    val dy = corner.y - position.y
+                                                    sqrt(dx * dx + dy * dy)
+                                                }
+
+                                                closest?.let { (_, setter) ->
+                                                    setter(position.coerceIn(Offset.Zero, Offset(1f, 1f)))
+                                                }
+                                            }
+                                        }
+                                ) {
+                                    drawPerspectiveOverlay(
+                                        topLeft = topLeft,
+                                        topRight = topRight,
+                                        bottomRight = bottomRight,
+                                        bottomLeft = bottomLeft,
+                                        canvasSize = size,
+                                        imageSize = imageSize,
+                                        imageScale = imageScale,
+                                        imageOffset = imageOffset
+                                    )
+                                }
                             }
                         }
-                    },
-                    onDrag = { change, dragAmount ->
-                        selectedCorner?.let { corner ->
-                            // Convert drag amount to normalized coordinates
-                            val normalizedAmount = Offset(
-                                dragAmount.x / size.width,
-                                dragAmount.y / size.height
-                            )
-                            onCornerMoved(corner, normalizedAmount)
-                        }
-                    },
-                    onDragEnd = {
-                        onDragEnd()
                     }
-                )
-            }
-    ) {
-        canvasSize = IntSize(size.width.toInt(), size.height.toInt())
-
-        // Calculate image bounds to fit within canvas while maintaining aspect ratio
-        val imageAspectRatio = imageBitmap.width.toFloat() / imageBitmap.height.toFloat()
-        val canvasAspectRatio = size.width / size.height
-
-        val (imageWidth, imageHeight, offsetX, offsetY) = if (imageAspectRatio > canvasAspectRatio) {
-            // Image is wider than canvas
-            val width = size.width
-            val height = size.width / imageAspectRatio
-            val yOffset = (size.height - height) / 2f
-            listOf(width, height, 0f, yOffset)
-        } else {
-            // Image is taller than canvas
-            val height = size.height
-            val width = size.height * imageAspectRatio
-            val xOffset = (size.width - width) / 2f
-            listOf(width, height, xOffset, 0f)
-        }
-
-        // Draw the image fitted to canvas
-        drawImage(
-            image = imageBitmap,
-            dstOffset = IntOffset(offsetX.toInt(), offsetY.toInt()),
-            dstSize = IntSize(imageWidth.toInt(), imageHeight.toInt()),
-            filterQuality = FilterQuality.Low
-        )
-
-        // Draw perspective grid overlay
-        drawIntoCanvas { canvas ->
-            val nativeCanvas = canvas.nativeCanvas
-            val paint = android.graphics.Paint().apply {
-                color = android.graphics.Color.RED
-                strokeWidth = 4f
-                style = android.graphics.Paint.Style.STROKE
-            }
-
-            val points = listOf(
-                perspectivePoints.topLeft,
-                perspectivePoints.topRight,
-                perspectivePoints.bottomRight,
-                perspectivePoints.bottomLeft
-            )
-
-            // Convert normalized points to image coordinates
-            val imagePoints = points.map { point ->
-                android.graphics.PointF(
-                    offsetX + point.x * imageWidth,
-                    offsetY + point.y * imageHeight
-                )
-            }
-
-            // Draw quadrilateral
-            imagePoints.forEachIndexed { index, point ->
-                val nextPoint = imagePoints[(index + 1) % imagePoints.size]
-                nativeCanvas.drawLine(
-                    point.x, point.y,
-                    nextPoint.x, nextPoint.y,
-                    paint
-                )
-            }
-
-            // Draw corner points
-            imagePoints.forEachIndexed { index, point ->
-                val corner = when (index) {
-                    0 -> Corner.TOP_LEFT
-                    1 -> Corner.TOP_RIGHT
-                    2 -> Corner.BOTTOM_RIGHT
-                    else -> Corner.BOTTOM_LEFT
                 }
+            }
 
-                val isSelected = corner == selectedCorner
-                paint.color = if (isSelected) {
-                    android.graphics.Color.YELLOW
+            // Control buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (correctedBitmap == null) {
+                    OutlinedButton(
+                        onClick = { autoDetectCorners() },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.AutoFixHigh, null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Auto")
+                    }
+
+                    OutlinedButton(
+                        onClick = { resetPoints() },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.Refresh, null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Reset")
+                    }
+
+                    Button(
+                        onClick = { applyCorrection() },
+                        modifier = Modifier.weight(1f),
+                        enabled = !isProcessing
+                    ) {
+                        Icon(Icons.Default.Check, null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Apply")
+                    }
                 } else {
-                    android.graphics.Color.RED
+                    OutlinedButton(
+                        onClick = {
+                            correctedBitmap = null
+                            errorMessage = null
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.Edit, null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Edit Again")
+                    }
+
+                    Button(
+                        onClick = {
+                            correctedBitmap?.let { bitmap ->
+                                onResult(bitmap.asAndroidBitmap())
+                            }
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.Save, null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Save")
+                    }
                 }
-                paint.style = android.graphics.Paint.Style.FILL
-                nativeCanvas.drawCircle(point.x, point.y, 25f, paint)
+            }
 
-                // Draw inner white circle for contrast
-                paint.color = android.graphics.Color.WHITE
-                nativeCanvas.drawCircle(point.x, point.y, 15f, paint)
-
-                // Reset for next drawing
-                paint.style = android.graphics.Paint.Style.STROKE
-                paint.color = android.graphics.Color.RED
+            // Instructions
+            if (correctedBitmap == null) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    )
+                ) {
+                    Text(
+                        text = "Drag the corner points to adjust the document boundaries, then tap Apply to correct perspective.",
+                        modifier = Modifier.padding(12.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }
 }
 
-suspend fun applyPerspectiveCorrection(
-    bitmap: Bitmap,
-    points: PerspectivePoints,
-    rotationAngle: Float
-): Bitmap {
-    return withContext(Dispatchers.IO) {
-        try {
-            correctPerspectiveWithPointsAndRotation(bitmap, points, rotationAngle)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            bitmap
-        }
-    }
+// Extension function to coerce Offset values
+private fun Offset.coerceIn(min: Offset, max: Offset): Offset {
+    return Offset(
+        x = x.coerceIn(min.x, max.x),
+        y = y.coerceIn(min.y, max.y)
+    )
 }
 
-fun correctPerspectiveWithPointsAndRotation(
-    bitmap: Bitmap,
-    points: PerspectivePoints,
-    rotationAngle: Float = 0f
-): Bitmap {
-    return try {
-        val src = Mat()
-        Utils.bitmapToMat(bitmap, src)
+// Function to draw the perspective overlay
+private fun DrawScope.drawPerspectiveOverlay(
+    topLeft: Offset,
+    topRight: Offset,
+    bottomRight: Offset,
+    bottomLeft: Offset,
+    canvasSize: Size,
+    imageSize: IntSize,
+    imageScale: Float,
+    imageOffset: Offset
+) {
+    val strokeWidth = 3.dp.toPx()
+    val cornerRadius = 12.dp.toPx()
 
-        // Convert normalized points to image coordinates
-        val srcPoints = MatOfPoint2f(
-            Point((points.topLeft.x * bitmap.width).toDouble(),
-                (points.topLeft.y * bitmap.height).toDouble()
-            ),
-            Point((points.topRight.x * bitmap.width).toDouble(),
-                (points.topRight.y * bitmap.height).toDouble()
-            ),
-            Point((points.bottomRight.x * bitmap.width).toDouble(),
-                (points.bottomRight.y * bitmap.height).toDouble()
-            ),
-            Point((points.bottomLeft.x * bitmap.width).toDouble(),
-                (points.bottomLeft.y * bitmap.height).toDouble()
-            )
+    // Convert normalized coordinates to canvas coordinates with proper scaling
+    fun toCanvasPoint(normalized: Offset): Offset {
+        val x = normalized.x * imageSize.width * imageScale + imageOffset.x
+        val y = normalized.y * imageSize.height * imageScale + imageOffset.y
+        return Offset(x, y)
+    }
+
+    val tl = toCanvasPoint(topLeft)
+    val tr = toCanvasPoint(topRight)
+    val br = toCanvasPoint(bottomRight)
+    val bl = toCanvasPoint(bottomLeft)
+
+    // Draw connecting lines
+    drawLine(
+        color = Color.Red,
+        start = tl,
+        end = tr,
+        strokeWidth = strokeWidth
+    )
+    drawLine(
+        color = Color.Red,
+        start = tr,
+        end = br,
+        strokeWidth = strokeWidth
+    )
+    drawLine(
+        color = Color.Red,
+        start = br,
+        end = bl,
+        strokeWidth = strokeWidth
+    )
+    drawLine(
+        color = Color.Red,
+        start = bl,
+        end = tl,
+        strokeWidth = strokeWidth
+    )
+
+    // Draw corner circles
+    listOf(tl, tr, br, bl).forEach { corner ->
+        drawCircle(
+            color = Color.Red,
+            radius = cornerRadius,
+            center = corner,
+            style = Stroke(width = strokeWidth)
         )
-
-        // Create rotation matrix
-        val center = Point(bitmap.width / 2.0, bitmap.height / 2.0)
-        val rotationMatrix = Imgproc.getRotationMatrix2D(center, rotationAngle.toDouble(), 1.0)
-
-        // Apply rotation to destination points
-        val dstPoints = MatOfPoint2f(
-            Point(0.0, 0.0),
-            Point(bitmap.width.toDouble(), 0.0),
-            Point(bitmap.width.toDouble(), bitmap.height.toDouble()),
-            Point(0.0, bitmap.height.toDouble())
+        drawCircle(
+            color = Color.White,
+            radius = cornerRadius - strokeWidth,
+            center = corner
         )
-
-        // Rotate destination points
-        val rotatedDstPoints = MatOfPoint2f()
-        Core.transform(dstPoints, rotatedDstPoints, rotationMatrix)
-
-        // Get perspective transformation matrix
-        val perspectiveMatrix = Imgproc.getPerspectiveTransform(srcPoints, rotatedDstPoints)
-
-        // Apply perspective transformation
-        val warped = Mat()
-        Imgproc.warpPerspective(
-            src,
-            warped,
-            perspectiveMatrix,
-            OpenCVSize(bitmap.width.toDouble(), bitmap.height.toDouble())
-        )
-
-        // Convert back to bitmap
-        val resultBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
-        Utils.matToBitmap(warped, resultBitmap)
-
-        // Clean up
-        src.release()
-        srcPoints.release()
-        dstPoints.release()
-        rotatedDstPoints.release()
-        rotationMatrix.release()
-        perspectiveMatrix.release()
-        warped.release()
-
-        resultBitmap
-    } catch (e: Exception) {
-        e.printStackTrace()
-        bitmap
     }
 }

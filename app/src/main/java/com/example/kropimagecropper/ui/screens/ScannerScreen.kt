@@ -57,7 +57,8 @@ import com.attafitamim.krop.ui.ImageCropperDialog
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
-fun ScannerScreen(onDone: () -> Unit) {
+fun ScannerScreen(onDone: () -> Unit,
+                  onNavigateToPerspective: ((Bitmap) -> Unit)? = null ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
@@ -143,7 +144,8 @@ fun ScannerScreen(onDone: () -> Unit) {
                 println("DEBUG: Captured image is invalid")
                 selectedImageUri = null
                 cameraTempUri = null
-                saveError = "Camera captured an invalid image. Please try again."
+                saveError =
+                    context.getString(R.string.camera_captured_an_invalid_image_please_try_again)
                 scope.launch {
                     kotlinx.coroutines.delay(3000)
                     saveError = null
@@ -441,15 +443,21 @@ fun ScannerScreen(onDone: () -> Unit) {
                             showCropOptions = false
                             selectedImageUri = null
                         },
-                        title = { Text("Document Processing") },
+                        title = { Text(stringResource(R.string.document_processing)) },
                         text = {
                             Column {
-                                Text("Choose how to process your document:")
+                                Text(stringResource(R.string.choose_how_to_process_your_document))
                                 Spacer(modifier = Modifier.height(12.dp))
                                 Text(
-                                    "🔧 Smart Perspective Correction: Automatically detects and corrects document perspective (Recommended)",
+                                    stringResource(R.string.smart_perspective_correction_automatically_detects_and_corrects_document_perspective_recommended),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    "🎯 Manual Perspective Correction: Manually adjust document corners for precise correction",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.secondary
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
@@ -475,6 +483,46 @@ fun ScannerScreen(onDone: () -> Unit) {
                                 }
 
                                 Spacer(modifier = Modifier.height(8.dp))
+
+                                // Add manual perspective correction button
+                                onNavigateToPerspective?.let { callback ->
+                                    Button(
+                                        onClick = {
+                                            showCropOptions = false
+                                            // Load the image and pass it to the callback
+                                            scope.launch {
+                                                try {
+                                                    withContext(Dispatchers.IO) {
+                                                        val inputStream = context.contentResolver.openInputStream(selectedImageUri!!)
+                                                        val bitmap = BitmapFactory.decodeStream(inputStream)
+                                                        inputStream?.close()
+
+                                                        if (bitmap != null) {
+                                                            withContext(Dispatchers.Main) {
+                                                                callback(bitmap)
+                                                                selectedImageUri = null
+                                                            }
+                                                        }
+                                                    }
+                                                } catch (e: Exception) {
+                                                    withContext(Dispatchers.Main) {
+                                                        saveError = "Failed to load image: ${e.message}"
+                                                        showCropOptions = false
+                                                        selectedImageUri = null
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                                    ) {
+                                        Icon(Icons.Default.CropFree, contentDescription = null)
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Manual Perspective")
+                                    }
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
 
                                 OutlinedButton(
                                     onClick = {
