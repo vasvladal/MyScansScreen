@@ -1,3 +1,4 @@
+// Navigation.kt
 package com.example.kropimagecropper.navigation
 
 import android.graphics.Bitmap
@@ -16,10 +17,13 @@ import com.example.kropimagecropper.ui.screens.MyScansScreen
 import com.example.kropimagecropper.ui.screens.ScannerScreen
 import com.example.kropimagecropper.ui.screens.PreviewScanScreen
 import com.example.kropimagecropper.ui.screens.PerspectiveCorrectionScreen
+import com.example.kropimagecropper.ui.screens.ImageGridScreen
+import com.example.kropimagecropper.ui.screens.ImageListScreen
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URLEncoder
+import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
 @Composable
@@ -37,6 +41,14 @@ fun Navigation(navController: NavHostController) {
                 onOpenScan = { scanPath ->
                     val encodedPath = URLEncoder.encode(scanPath, StandardCharsets.UTF_8.toString())
                     navController.navigate("preview/$encodedPath")
+                },
+                onManageScans = {
+                    // Navigate to image grid for reordering
+                    navController.navigate("image_grid")
+                },
+                onManageScansAsList = {
+                    // Navigate to image list for reordering
+                    navController.navigate("image_list")
                 }
             )
         }
@@ -64,7 +76,7 @@ fun Navigation(navController: NavHostController) {
         composable("preview/{scanPath}") { backStackEntry ->
             val encodedScanPath = backStackEntry.arguments?.getString("scanPath")
             val scanPath = if (encodedScanPath != null) {
-                java.net.URLDecoder.decode(encodedScanPath, StandardCharsets.UTF_8.toString())
+                URLDecoder.decode(encodedScanPath, StandardCharsets.UTF_8.toString())
             } else {
                 ""
             }
@@ -75,9 +87,74 @@ fun Navigation(navController: NavHostController) {
             )
         }
 
+        composable("image_grid") {
+            // Get all scan files
+            val scansDir = ScanManager.getScansDirectory(context)
+            val imagePaths = remember {
+                scansDir.listFiles { file ->
+                    file.isFile && file.extension.lowercase() in listOf("jpg", "jpeg", "png")
+                }?.map { it.absolutePath }?.sorted() ?: emptyList()
+            }
+
+            ImageGridScreen(
+                imagePaths = imagePaths,
+                onBack = { navController.popBackStack() },
+                onImageClick = { imagePath ->
+                    val encodedPath = URLEncoder.encode(imagePath, StandardCharsets.UTF_8.toString())
+                    navController.navigate("preview/$encodedPath")
+                },
+                onOrderChanged = { newOrder ->
+                    // Handle the new order - you can implement custom logic here
+                    // For example, rename files to maintain the order, or save order to preferences
+                    scope.launch {
+                        try {
+                            // Option 1: Save order to SharedPreferences
+                            val prefs = context.getSharedPreferences("scan_order", android.content.Context.MODE_PRIVATE)
+                            val orderString = newOrder.joinToString("|")
+                            prefs.edit().putString("image_order", orderString).apply()
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
+            )
+        }
+
+        composable("image_list") {
+            // Get all scan files
+            val scansDir = ScanManager.getScansDirectory(context)
+            val imagePaths = remember {
+                scansDir.listFiles { file ->
+                    file.isFile && file.extension.lowercase() in listOf("jpg", "jpeg", "png")
+                }?.map { it.absolutePath }?.sorted() ?: emptyList()
+            }
+
+            ImageListScreen(
+                imagePaths = imagePaths,
+                onBack = { navController.popBackStack() },
+                onImageClick = { imagePath ->
+                    val encodedPath = URLEncoder.encode(imagePath, StandardCharsets.UTF_8.toString())
+                    navController.navigate("preview/$encodedPath")
+                },
+                onOrderChanged = { newOrder ->
+                    // Handle the new order
+                    scope.launch {
+                        try {
+                            // Save order to SharedPreferences
+                            val prefs = context.getSharedPreferences("scan_order", android.content.Context.MODE_PRIVATE)
+                            val orderString = newOrder.joinToString("|")
+                            prefs.edit().putString("image_order", orderString).apply()
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
+            )
+        }
+
         composable("perspective/{imagePath}") { backStackEntry ->
             val encodedImagePath = backStackEntry.arguments?.getString("imagePath") ?: ""
-            val imagePath = java.net.URLDecoder.decode(encodedImagePath, StandardCharsets.UTF_8.toString())
+            val imagePath = URLDecoder.decode(encodedImagePath, StandardCharsets.UTF_8.toString())
 
             // Create Uri from file path
             val imageFile = File(imagePath)

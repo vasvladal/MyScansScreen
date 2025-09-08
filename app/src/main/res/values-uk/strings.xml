@@ -154,4 +154,7 @@
     <string name="camera_captured_an_invalid_image_please_try_again">Camera captured an invalid image. Please try again.</string>
     <string name="perspective_correction_failed">Perspective correction failed: %1$s</string>
 
+    <string name="preview_scans">Preview Scans</string>
+    <string name="drag_to_reorder">Drag to reorder scans</string>
+
 </resources>

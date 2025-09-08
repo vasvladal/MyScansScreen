@@ -1,13 +1,15 @@
-// File: app/src/main/java/com/example/kropimagecropper/ui/screens/MyScansScreen.kt
-
+// MyScansScreen.kt (updated with improved PDF creation UI)
 package com.example.kropimagecropper.ui.screens
 
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.*
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -38,11 +40,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun MyScansScreen(
     onScan: () -> Unit,
     onOpenScan: (String) -> Unit,
+    onManageScans: () -> Unit,
+    onManageScansAsList: () -> Unit,
     onBack: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -54,6 +58,8 @@ fun MyScansScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showPdfDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(true) }
+    var showViewOptions by remember { mutableStateOf(false) }
+    var showSelectionHelp by remember { mutableStateOf(false) }
 
     // Pre-fetch string resources
     val selectedCountText = stringResource(R.string.selected_count)
@@ -199,13 +205,56 @@ fun MyScansScreen(
                         }
                     } else {
                         if (scans.isNotEmpty()) {
-                            IconButton(onClick = { isSelectMode = true }) {
-                                Icon(Icons.Default.SelectAll, contentDescription = "Select")
+                            Box {
+                                IconButton(onClick = { showViewOptions = true }) {
+                                    Icon(Icons.Default.MoreVert, contentDescription = "View options")
+                                }
+
+                                DropdownMenu(
+                                    expanded = showViewOptions,
+                                    onDismissRequest = { showViewOptions = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Grid View") },
+                                        onClick = {
+                                            showViewOptions = false
+                                            onManageScans()
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("List View") },
+                                        onClick = {
+                                            showViewOptions = false
+                                            onManageScansAsList()
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Create PDF") },
+                                        onClick = {
+                                            showViewOptions = false
+                                            isSelectMode = true
+                                            showSelectionHelp = true
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            if (!isSelectMode && scans.isNotEmpty()) {
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        isSelectMode = true
+                        showSelectionHelp = true
+                    },
+                    icon = { Icon(Icons.Default.PictureAsPdf, "Create PDF") },
+                    text = { Text("Create PDF") },
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
         }
     ) { padding ->
         if (isLoading) {
@@ -253,73 +302,164 @@ fun MyScansScreen(
                 }
             }
         } else {
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(120.dp),
-                contentPadding = PaddingValues(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(padding)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
             ) {
-                items(scans, key = { it.absolutePath }) { file ->
-                    ScanItem(
-                        file = file,
-                        isSelected = file in selected,
-                        isSelectMode = isSelectMode,
-                        onSelect = { newSelected ->
-                            selected = if (newSelected) {
-                                selected + file
-                            } else {
-                                selected - file
+                // Selection help banner
+                if (showSelectionHelp && isSelectMode) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Info,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Select scans for PDF",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Text(
+                                    text = "Tap on scans to select them, then use the PDF button above to create a PDF",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                )
                             }
-                        },
-                        onClick = {
-                            if (isSelectMode) {
-                                // Toggle selection
-                                selected = if (file in selected) {
-                                    selected - file
-                                } else {
+                            IconButton(
+                                onClick = { showSelectionHelp = false },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(Icons.Default.Close, "Close help")
+                            }
+                        }
+                    }
+                }
+
+                // Scans grid
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(120.dp),
+                    contentPadding = PaddingValues(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    items(scans, key = { it.absolutePath }) { file ->
+                        ScanItem(
+                            file = file,
+                            isSelected = file in selected,
+                            isSelectMode = isSelectMode,
+                            onSelect = { newSelected ->
+                                selected = if (newSelected) {
                                     selected + file
+                                } else {
+                                    selected - file
                                 }
-                            } else {
-                                // In the ScanItem onClick handler, replace the PDF handling code with:
-                                if (file.extension.lowercase() == "pdf") {
-                                    // Open PDF with external app
-                                    try {
-                                        val uri = FileProvider.getUriForFile(
-                                            context,
-                                            "${context.packageName}.fileprovider",
-                                            file
-                                        )
-
-                                        val intent = Intent(Intent.ACTION_VIEW).apply {
-                                            setDataAndType(uri, "application/pdf")
-                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                            addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION) // Optional, if needed
-                                        }
-
-                                        // Grant temporary permissions to all apps that can handle the intent
-                                        val resolvedIntentActivities = context.packageManager
-                                            .queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
-
-                                        for (resolvedIntentInfo in resolvedIntentActivities) {
-                                            val packageName = resolvedIntentInfo.activityInfo.packageName
-                                            context.grantUriPermission(
-                                                packageName,
-                                                uri,
-                                                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                                            )
-                                        }
-
-                                        context.startActivity(intent)
-                                    } catch (e: Exception) {
-                                        Toast.makeText(context, "No PDF viewer found", Toast.LENGTH_SHORT).show()
+                            },
+                            onClick = {
+                                if (isSelectMode) {
+                                    // Toggle selection
+                                    selected = if (file in selected) {
+                                        selected - file
+                                    } else {
+                                        selected + file
                                     }
                                 } else {
-                                    onOpenScan(file.absolutePath)
+                                    // In the ScanItem onClick handler, replace the PDF handling code with:
+                                    if (file.extension.lowercase() == "pdf") {
+                                        // Open PDF with external app
+                                        try {
+                                            val uri = FileProvider.getUriForFile(
+                                                context,
+                                                "${context.packageName}.fileprovider",
+                                                file
+                                            )
+
+                                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                                setDataAndType(uri, "application/pdf")
+                                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                                addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION) // Optional, if needed
+                                            }
+
+                                            // Grant temporary permissions to all apps that can handle the intent
+                                            val resolvedIntentActivities = context.packageManager
+                                                .queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+
+                                            for (resolvedIntentInfo in resolvedIntentActivities) {
+                                                val packageName = resolvedIntentInfo.activityInfo.packageName
+                                                context.grantUriPermission(
+                                                    packageName,
+                                                    uri,
+                                                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                                                )
+                                            }
+
+                                            context.startActivity(intent)
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "No PDF viewer found", Toast.LENGTH_SHORT).show()
+                                        }
+                                    } else {
+                                        onOpenScan(file.absolutePath)
+                                    }
+                                }
+                            }
+                        )
+                    }
+                }
+
+                // Selection action bar
+                if (isSelectMode) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        tonalElevation = 4.dp,
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "${selected.size} selected",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+
+                            Row {
+                                IconButton(
+                                    onClick = {
+                                        selected = emptySet()
+                                        isSelectMode = false
+                                    },
+                                    enabled = selected.isNotEmpty()
+                                ) {
+                                    Icon(Icons.Default.Clear, "Clear selection")
+                                }
+
+                                IconButton(
+                                    onClick = { showPdfDialog = true },
+                                    enabled = selected.isNotEmpty() && selected.none { it.extension.lowercase() == "pdf" }
+                                ) {
+                                    Icon(Icons.Default.PictureAsPdf, "Create PDF")
                                 }
                             }
                         }
-                    )
+                    }
                 }
             }
         }
