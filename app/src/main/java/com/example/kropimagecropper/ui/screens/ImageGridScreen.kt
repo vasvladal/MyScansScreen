@@ -80,7 +80,7 @@ fun ImageGridScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Manage Scans") },
+                title = { Text(stringResource(R.string.manage_scans)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -98,14 +98,14 @@ fun ImageGridScreen(
                                 onOrderChanged(images.map { it.id })
                                 Toast.makeText(
                                     context,
-                                    "Order reset to original",
+                                    context.getString(R.string.order_reset_to_original),
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
-                                contentDescription = "Reset order"
+                                contentDescription = stringResource(R.string.reset_order)
                             )
                         }
                     }
@@ -124,13 +124,13 @@ fun ImageGridScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "No images found",
+                        text = stringResource(R.string.no_images_found),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Scan some documents to get started",
+                        text = stringResource(R.string.scan_some_documents_to_get_started),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                     )
@@ -155,13 +155,13 @@ fun ImageGridScreen(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
-                            text = "Reorder your scans",
+                            text = stringResource(R.string.reorder_your_scans),
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "• Long press and drag to reorder\n• Tap to view full size\n• Long press delete button to remove",
+                            text = stringResource(R.string.long_press_and_drag_to_reorder_tap_to_view_full_size_long_press_delete_button_to_remove),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                         )
@@ -203,12 +203,16 @@ fun ImageGridScreen(
 
                                             // Simple reordering based on drag distance
                                             val currentIndex = images.indexOf(item)
-                                            val dragDistanceInItems = (dragOffset.x / itemSizePx).roundToInt()
+                                            val dragDistanceInItems =
+                                                (dragOffset.x / itemSizePx).roundToInt()
                                             val targetIndex = (currentIndex + dragDistanceInItems)
                                                 .coerceIn(0, images.size - 1)
 
                                             // Reorder if position changed
-                                            if (targetIndex != currentIndex && abs(dragDistanceInItems) >= 1) {
+                                            if (targetIndex != currentIndex && abs(
+                                                    dragDistanceInItems
+                                                ) >= 1
+                                            ) {
                                                 val newList = images.toMutableList()
                                                 newList.removeAt(currentIndex)
                                                 newList.add(targetIndex, item)
@@ -241,9 +245,13 @@ fun ImageGridScreen(
         showDeleteDialog?.let { itemToDelete ->
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = null },
-                title = { Text("Delete Scan") },
+                title = { Text(stringResource(R.string.delete_scan)) },
                 text = {
-                    Text("Are you sure you want to delete \"${itemToDelete.file.name}\"?\n\nThis action cannot be undone.")
+                    Text(
+                        stringResource(
+                            R.string.are_you_sure_you_want_to_delete_this_action_cannot_be_undone,
+                            itemToDelete.file.name
+                        ))
                 },
                 confirmButton = {
                     Button(
@@ -251,17 +259,20 @@ fun ImageGridScreen(
                             if (itemToDelete.file.delete()) {
                                 images = images.filter { it.id != itemToDelete.id }
                                 onOrderChanged(images.map { it.id })
-                                Toast.makeText(
-                                    context,
-                                    "Scan deleted",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+//                                Toast.makeText(
+//                                    context,
+//                                    stringResource(R.string.scan_deleted),
+//                                    Toast.LENGTH_SHORT
+//                                ).show()
+                                Toast.makeText(context, context.getString(R.string.scan_deleted), Toast.LENGTH_SHORT).show()
                             } else {
-                                Toast.makeText(
-                                    context,
-                                    "Failed to delete scan",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+//                                Toast.makeText(
+//                                    context,
+//                                    "Failed to delete scan",
+//                                    Toast.LENGTH_SHORT
+//                                ).show()
+
+                                Toast.makeText(context, context.getString(R.string.failed_to_delete_items), Toast.LENGTH_SHORT).show()
                             }
                             showDeleteDialog = null
                         },
@@ -269,12 +280,12 @@ fun ImageGridScreen(
                             containerColor = MaterialTheme.colorScheme.error
                         )
                     ) {
-                        Text("Delete", color = MaterialTheme.colorScheme.onError)
+                        Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.onError)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showDeleteDialog = null }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             )
@@ -360,7 +371,7 @@ private fun ImageGridItem(
             ) {
                 Icon(
                     Icons.Default.Delete,
-                    contentDescription = "Delete",
+                    contentDescription = stringResource(R.string.delete),
                     modifier = Modifier
                         .size(24.dp)
                         .padding(4.dp),

@@ -26,9 +26,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.example.kropimagecropper.R
 import com.example.kropimagecropper.utils.CustomPoint
 import com.example.kropimagecropper.utils.OpenCVPerspectiveCorrector
 import com.example.kropimagecropper.utils.PerspectivePoints
@@ -81,7 +83,7 @@ fun PerspectiveCorrectionScreen(
                         }
                     } else {
                         withContext(Dispatchers.Main) {
-                            errorMessage = "Failed to load image"
+                            errorMessage = context.getString(R.string.failed_to_load_image)
                         }
                     }
                 }
@@ -173,7 +175,7 @@ fun PerspectiveCorrectionScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Perspective Correction") },
+                title = { Text(stringResource(R.string.perspective_correction)) },
                 navigationIcon = {
                     IconButton(onClick = onCancel) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
@@ -188,7 +190,7 @@ fun PerspectiveCorrectionScreen(
                                 }
                             }
                         ) {
-                            Text("Done", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.done), fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -236,7 +238,7 @@ fun PerspectiveCorrectionScreen(
                     ) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text("Processing perspective correction...")
+                        Text(stringResource(R.string.processing_perspective_correction))
                     }
                 }
             }
@@ -259,7 +261,7 @@ fun PerspectiveCorrectionScreen(
                             // Show corrected image
                             Image(
                                 bitmap = correctedBitmap!!,
-                                contentDescription = "Corrected Image",
+                                contentDescription = stringResource(R.string.corrected_image),
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Fit
                             )
@@ -268,7 +270,7 @@ fun PerspectiveCorrectionScreen(
                             Box(modifier = Modifier.fillMaxSize()) {
                                 Image(
                                     bitmap = bitmap,
-                                    contentDescription = "Original Image",
+                                    contentDescription = stringResource(R.string.original_image),
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .onSizeChanged { containerSize ->
@@ -301,8 +303,10 @@ fun PerspectiveCorrectionScreen(
                                             detectDragGestures { change, _ ->
                                                 val rawPosition = change.position
                                                 // Convert screen coordinates to image coordinates
-                                                val imageX = (rawPosition.x - imageOffset.x) / imageScale
-                                                val imageY = (rawPosition.y - imageOffset.y) / imageScale
+                                                val imageX =
+                                                    (rawPosition.x - imageOffset.x) / imageScale
+                                                val imageY =
+                                                    (rawPosition.y - imageOffset.y) / imageScale
 
                                                 // Normalize coordinates
                                                 val position = Offset(
@@ -312,10 +316,18 @@ fun PerspectiveCorrectionScreen(
 
                                                 // Find closest corner and update it
                                                 val corners = listOf(
-                                                    topLeft to { offset: Offset -> topLeft = offset },
-                                                    topRight to { offset: Offset -> topRight = offset },
-                                                    bottomRight to { offset: Offset -> bottomRight = offset },
-                                                    bottomLeft to { offset: Offset -> bottomLeft = offset }
+                                                    topLeft to { offset: Offset ->
+                                                        topLeft = offset
+                                                    },
+                                                    topRight to { offset: Offset ->
+                                                        topRight = offset
+                                                    },
+                                                    bottomRight to { offset: Offset ->
+                                                        bottomRight = offset
+                                                    },
+                                                    bottomLeft to { offset: Offset ->
+                                                        bottomLeft = offset
+                                                    }
                                                 )
 
                                                 val closest = corners.minByOrNull { (corner, _) ->
@@ -325,7 +337,12 @@ fun PerspectiveCorrectionScreen(
                                                 }
 
                                                 closest?.let { (_, setter) ->
-                                                    setter(position.coerceIn(Offset.Zero, Offset(1f, 1f)))
+                                                    setter(
+                                                        position.coerceIn(
+                                                            Offset.Zero,
+                                                            Offset(1f, 1f)
+                                                        )
+                                                    )
                                                 }
                                             }
                                         }
@@ -359,7 +376,7 @@ fun PerspectiveCorrectionScreen(
                     ) {
                         Icon(Icons.Default.AutoFixHigh, null, Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("Auto")
+                        Text(stringResource(R.string.auto_correct))
                     }
 
                     OutlinedButton(
@@ -368,7 +385,7 @@ fun PerspectiveCorrectionScreen(
                     ) {
                         Icon(Icons.Default.Refresh, null, Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("Reset")
+                        Text(stringResource(R.string.reset))
                     }
 
                     Button(
@@ -378,7 +395,7 @@ fun PerspectiveCorrectionScreen(
                     ) {
                         Icon(Icons.Default.Check, null, Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("Apply")
+                        Text(stringResource(R.string.apply))
                     }
                 } else {
                     OutlinedButton(
@@ -390,7 +407,7 @@ fun PerspectiveCorrectionScreen(
                     ) {
                         Icon(Icons.Default.Edit, null, Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("Edit Again")
+                        Text(stringResource(R.string.edit_again))
                     }
 
                     Button(
@@ -403,7 +420,7 @@ fun PerspectiveCorrectionScreen(
                     ) {
                         Icon(Icons.Default.Save, null, Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("Save")
+                        Text(stringResource(R.string.save))
                     }
                 }
             }
@@ -419,7 +436,7 @@ fun PerspectiveCorrectionScreen(
                     )
                 ) {
                     Text(
-                        text = "Drag the corner points to adjust the document boundaries, then tap Apply to correct perspective.",
+                        text = stringResource(R.string.drag_the_corner_points_to_adjust_the_document_boundaries_then_tap_apply_to_correct_perspective),
                         modifier = Modifier.padding(12.dp),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant

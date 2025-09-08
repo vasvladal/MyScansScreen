@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.example.kropimagecropper.R
 import com.example.kropimagecropper.data.ScanManager
 import com.example.kropimagecropper.utils.OpenCVPerspectiveCorrector
-import com.example.kropimagecropper.utils.CustomPoint // Import the corrected CustomPoint
+import com.example.kropimagecropper.utils.CustomPoint
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
@@ -59,7 +59,7 @@ import com.attafitamim.krop.ui.ImageCropperDialog
 fun ScannerScreen(
     onDone: () -> Unit,
     onNavigateToPerspective: ((Bitmap) -> Unit)? = null,
-    perspectivePoints: List<CustomPoint>? = null // Change to CustomPoint
+    perspectivePoints: List<CustomPoint>? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -85,22 +85,45 @@ fun ScannerScreen(
     val cropErrorString = stringResource(R.string.crop_operation_failed)
     val storagePermissionRequired = stringResource(R.string.storage_permission_required)
     val failedToCompressBitmap = stringResource(R.string.failed_to_compress_image)
+    val cameraInvalidImage = stringResource(R.string.camera_captured_an_invalid_image_please_try_again)
+    val perspectiveCorrectionFailed = stringResource(R.string.perspective_correction_failed)
+    val loadingImageText = stringResource(R.string.loading_image)
+    val processingCropText = stringResource(R.string.processing_crop)
+    val documentProcessingText = stringResource(R.string.document_processing)
+    val chooseProcessingText = stringResource(R.string.choose_how_to_process_your_document)
+    val smartPerspectiveText = stringResource(R.string.smart_perspective_correction_automatically_detects_and_corrects_document_perspective_recommended)
+    val scannedDocumentText = stringResource(R.string.scanned_document)
+    val saveAsScanText = stringResource(R.string.save_as_scan)
+    val scanAnotherText = stringResource(R.string.scan_another)
+    val viewMyScansText = stringResource(R.string.view_my_scans)
+    val startScanningText = stringResource(R.string.start_scanning)
+    val takePhotoText = stringResource(R.string.take_photo)
+    val selectFromGalleryText = stringResource(R.string.select_from_gallery)
+    val cameraPermissionRequired = stringResource(R.string.camera_permission_required)
+    val storageCameraPermissionRequired = stringResource(R.string.storage_and_camera_permissions_are_required_to_scan_documents)
+    val cameraPhotoAccessText = stringResource(R.string.camera_and_photo_access_permissions_are_required_on_android_14_you_can_grant_partial_photo_access)
+    val fullPhotoAccessText = stringResource(R.string.full_photo_access_granted)
+    val partialPhotoAccessText = stringResource(R.string.partial_photo_access_granted)
+    val photoAccessNeededText = stringResource(R.string.photo_access_needed)
+    val documentScannerText = stringResource(R.string.document_scanner)
+    val backText = stringResource(R.string.back)
+    val cancelText = stringResource(R.string.cancel)
 
     // Permissions with Android 14+ support
     val cameraPermission = rememberPermissionState(permission = Manifest.permission.CAMERA)
 
     // Media permissions based on Android version
     val mediaPermissions = when {
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> { // Android 14+ (API 34+)
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
             listOf(
                 Manifest.permission.READ_MEDIA_IMAGES,
                 Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
             )
         }
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> { // Android 13 (API 33)
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
             listOf(Manifest.permission.READ_MEDIA_IMAGES)
         }
-        else -> { // Android 12 and below
+        else -> {
             listOf(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
     }
@@ -117,15 +140,11 @@ fun ScannerScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            println("DEBUG: Gallery selected URI: $it")
-            // Copy gallery URI to temp file for better compatibility
             val tempUri = ScanManager.copyUriToTempFile(context, it)
             if (tempUri != null) {
-                println("DEBUG: Created temp copy: $tempUri")
                 selectedImageUri = tempUri
             } else {
-                println("DEBUG: Failed to copy gallery image")
-                selectedImageUri = it // Fallback to original URI
+                selectedImageUri = it
             }
         }
     }
@@ -134,31 +153,24 @@ fun ScannerScreen(
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success: Boolean ->
-        println("DEBUG: Camera capture result: $success")
         if (success && cameraTempUri != null) {
-            println("DEBUG: Camera capture successful, URI: $cameraTempUri")
-            // Verify the captured image exists and is valid
             val isValid = ScanManager.isValidImageUri(context, cameraTempUri!!)
             if (isValid) {
-                println("DEBUG: Captured image is valid, proceeding with processing")
                 selectedImageUri = cameraTempUri
             } else {
-                println("DEBUG: Captured image is invalid")
                 selectedImageUri = null
                 cameraTempUri = null
-                saveError =
-                    context.getString(R.string.camera_captured_an_invalid_image_please_try_again)
+                saveError = cameraInvalidImage
                 scope.launch {
                     kotlinx.coroutines.delay(3000)
                     saveError = null
                 }
             }
         } else {
-            println("DEBUG: Camera capture failed or cancelled")
             selectedImageUri = null
             cameraTempUri = null
             if (!success) {
-                saveError = "Camera capture failed or was cancelled"
+                saveError = context.getString(R.string.camera_failed)
                 scope.launch {
                     kotlinx.coroutines.delay(3000)
                     saveError = null
@@ -167,7 +179,7 @@ fun ScannerScreen(
         }
     }
 
-    // OpenCV Perspective Correction Function - Now uses user-selected points
+    // OpenCV Perspective Correction Function
     fun applyOpenCVPerspectiveCorrection(uri: Uri) {
         scope.launch {
             isProcessing = true
@@ -178,14 +190,9 @@ fun ScannerScreen(
                     inputStream?.close()
 
                     if (originalBitmap != null) {
-                        println("DEBUG: Starting OpenCV perspective correction")
-
-                        // Use user-selected points if available, otherwise fall back to automatic detection
                         val correctedBitmap = if (perspectivePoints != null && perspectivePoints.size == 4) {
-                            println("DEBUG: Using user-selected points for perspective correction")
                             OpenCVPerspectiveCorrector.correctPerspectiveWithPoints(originalBitmap, perspectivePoints)
                         } else {
-                            println("DEBUG: Using automatic perspective detection")
                             OpenCVPerspectiveCorrector.correctPerspective(originalBitmap)
                         }
 
@@ -194,27 +201,22 @@ fun ScannerScreen(
                             selectedImageUri = null
                             showCropOptions = true
                             isProcessing = false
-                            println("DEBUG: OpenCV perspective correction completed successfully")
-
-                            // Show success message
-                            Toast.makeText(context, "Perspective correction applied successfully", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, R.string.operation_successful, Toast.LENGTH_SHORT).show()
                         }
                     } else {
                         withContext(Dispatchers.Main) {
-                            saveError = "Failed to load image for processing"
+                            saveError = context.getString(R.string.operation_failed)
                             isProcessing = false
-                            Toast.makeText(context, "Failed to load image", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, R.string.operation_failed, Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    saveError = "Perspective correction failed: ${e.message}"
+                    saveError = context.getString(R.string.perspective_correction_failed, e.message)
                     isProcessing = false
                     Toast.makeText(context,
                         context.getString(R.string.perspective_correction_failed, e.message), Toast.LENGTH_LONG).show()
-                    println("DEBUG: OpenCV perspective correction failed: ${e.message}")
-                    e.printStackTrace()
                 }
             }
         }
@@ -225,38 +227,32 @@ fun ScannerScreen(
         scope.launch {
             isProcessing = true
             try {
-                println("DEBUG: Starting Krop cropping as fallback")
                 val result = imageCropper.crop(uri, context)
 
                 when (result) {
                     is CropResult.Success -> {
-                        println("DEBUG: Krop crop successful")
                         croppedImage = result.bitmap
                         selectedImageUri = null
                         showCropOptions = false
                         isProcessing = false
                     }
                     is CropResult.Cancelled -> {
-                        println("DEBUG: Krop crop cancelled by user")
                         selectedImageUri = null
                         showCropOptions = false
                         isProcessing = false
                     }
                     is CropError -> {
-                        println("DEBUG: Krop crop error occurred")
                         selectedImageUri = null
                         showCropOptions = false
                         isProcessing = false
-                        saveError = "Crop operation failed. Please try again."
+                        saveError = cropErrorString
                     }
                 }
             } catch (e: Exception) {
-                println("DEBUG: Exception during Krop cropping: ${e.message}")
-                e.printStackTrace()
                 selectedImageUri = null
                 showCropOptions = false
                 isProcessing = false
-                saveError = "Crop error: ${e.message ?: "Unknown error"}. Please try again."
+                saveError = "${cropErrorString}: ${e.message ?: context.getString(R.string.operation_failed)}"
             }
         }
     }
@@ -288,7 +284,7 @@ fun ScannerScreen(
 
                         FileOutputStream(scanFile).use { outputStream ->
                             if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 95, outputStream)) {
-                                throw Exception("Failed to save scan")
+                                throw Exception(context.getString(R.string.operation_failed))
                             }
                         }
 
@@ -316,7 +312,7 @@ fun ScannerScreen(
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    saveError = "Save failed: ${e.message ?: ""}"
+                    saveError = "${context.getString(R.string.save_failed)}: ${e.message ?: ""}"
                     scope.launch {
                         kotlinx.coroutines.delay(3000)
                         saveError = null
@@ -330,15 +326,13 @@ fun ScannerScreen(
     LaunchedEffect(selectedImageUri) {
         selectedImageUri?.let { uri ->
             try {
-                println("DEBUG: Image selected, validating: $uri")
-                kotlinx.coroutines.delay(1500) // Wait for file to be ready
+                kotlinx.coroutines.delay(1500)
 
                 var isValid = false
                 var attempts = 0
                 while (!isValid && attempts < 5) {
                     isValid = ScanManager.isValidImageUri(context, uri)
                     if (!isValid) {
-                        println("DEBUG: Validation attempt ${attempts + 1} failed, waiting...")
                         kotlinx.coroutines.delay(1000)
                         attempts++
                     }
@@ -346,7 +340,7 @@ fun ScannerScreen(
 
                 if (!isValid) {
                     selectedImageUri = null
-                    saveError = "Image not ready or corrupted. Please try again."
+                    saveError = context.getString(R.string.operation_failed)
                     scope.launch {
                         kotlinx.coroutines.delay(3000)
                         saveError = null
@@ -354,12 +348,10 @@ fun ScannerScreen(
                     return@let
                 }
 
-                println("DEBUG: Image validated successfully, showing crop options")
                 showCropOptions = true
             } catch (e: Exception) {
-                println("DEBUG: Exception during image validation: ${e.message}")
                 selectedImageUri = null
-                saveError = "Image processing error: ${e.message}"
+                saveError = "${context.getString(R.string.operation_failed)}: ${e.message}"
                 scope.launch {
                     kotlinx.coroutines.delay(3000)
                     saveError = null
@@ -371,10 +363,10 @@ fun ScannerScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(stringResource(R.string.document_scanner)) },
+                title = { Text(documentScannerText) },
                 navigationIcon = {
                     IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, backText)
                     }
                 }
             )
@@ -415,7 +407,7 @@ fun ScannerScreen(
                             CircularProgressIndicator()
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = "Correcting document perspective...",
+                                text = processingText,
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
@@ -438,8 +430,8 @@ fun ScannerScreen(
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
                                 text = when (status) {
-                                    CropperLoading.PreparingImage -> stringResource(R.string.loading_image)
-                                    CropperLoading.SavingResult -> stringResource(R.string.processing_crop)
+                                    CropperLoading.PreparingImage -> loadingImageText
+                                    CropperLoading.SavingResult -> processingCropText
                                 },
                                 style = MaterialTheme.typography.bodyLarge
                             )
@@ -454,27 +446,15 @@ fun ScannerScreen(
                             showCropOptions = false
                             selectedImageUri = null
                         },
-                        title = { Text(stringResource(R.string.document_processing)) },
+                        title = { Text(documentProcessingText) },
                         text = {
                             Column {
-                                Text(stringResource(R.string.choose_how_to_process_your_document))
+                                Text(chooseProcessingText)
                                 Spacer(modifier = Modifier.height(12.dp))
                                 Text(
-                                    stringResource(R.string.smart_perspective_correction_automatically_detects_and_corrects_document_perspective_recommended),
+                                    smartPerspectiveText,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    "🎯 Manual Perspective Correction: Manually adjust document corners for precise correction",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.secondary
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    "✂️ Manual Crop: Traditional rectangular cropping with manual adjustment",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                                 )
                             }
                         },
@@ -490,7 +470,7 @@ fun ScannerScreen(
                                 ) {
                                     Icon(Icons.Default.AutoFixHigh, contentDescription = null)
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Smart Correction")
+                                    Text(stringResource(R.string.auto_correct))
                                 }
 
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -500,7 +480,6 @@ fun ScannerScreen(
                                     Button(
                                         onClick = {
                                             showCropOptions = false
-                                            // Load the image and pass it to the callback
                                             scope.launch {
                                                 try {
                                                     withContext(Dispatchers.IO) {
@@ -517,7 +496,7 @@ fun ScannerScreen(
                                                     }
                                                 } catch (e: Exception) {
                                                     withContext(Dispatchers.Main) {
-                                                        saveError = "Failed to load image: ${e.message}"
+                                                        saveError = context.getString(R.string.operation_failed)
                                                         showCropOptions = false
                                                         selectedImageUri = null
                                                     }
@@ -529,7 +508,7 @@ fun ScannerScreen(
                                     ) {
                                         Icon(Icons.Default.CropFree, contentDescription = null)
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        Text("Manual Perspective")
+                                        Text(stringResource(R.string.perspective_correction))
                                     }
 
                                     Spacer(modifier = Modifier.height(8.dp))
@@ -544,7 +523,7 @@ fun ScannerScreen(
                                 ) {
                                     Icon(Icons.Default.Crop, contentDescription = null)
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Manual Crop")
+                                    Text(stringResource(R.string.crop_and_enhance))
                                 }
                             }
                         },
@@ -555,7 +534,7 @@ fun ScannerScreen(
                                     selectedImageUri = null
                                 }
                             ) {
-                                Text("Cancel")
+                                Text(cancelText)
                             }
                         }
                     )
@@ -619,7 +598,7 @@ fun ScannerScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = stringResource(R.string.scanned_document),
+                                text = scannedDocumentText,
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary,
@@ -628,7 +607,7 @@ fun ScannerScreen(
 
                             Image(
                                 bitmap = croppedImage!!,
-                                contentDescription = stringResource(R.string.scanned_document),
+                                contentDescription = scannedDocumentText,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .heightIn(max = 400.dp)
@@ -662,7 +641,7 @@ fun ScannerScreen(
                                 ) {
                                     Icon(Icons.Default.Save, null, Modifier.size(20.dp))
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text(stringResource(R.string.save_as_scan), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                                    Text(saveAsScanText, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                                 }
 
                                 OutlinedButton(
@@ -675,7 +654,7 @@ fun ScannerScreen(
                                 ) {
                                     Icon(Icons.Default.Refresh, null, Modifier.size(20.dp))
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text(stringResource(R.string.scan_another))
+                                    Text(scanAnotherText)
                                 }
 
                                 // Always visible "View My Scans" button
@@ -688,7 +667,7 @@ fun ScannerScreen(
                                 ) {
                                     Icon(Icons.Default.Folder, null, Modifier.size(20.dp))
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text(stringResource(R.string.view_my_scans), fontWeight = FontWeight.Medium)
+                                    Text(viewMyScansText, fontWeight = FontWeight.Medium)
                                 }
                             }
                         }
@@ -721,14 +700,14 @@ fun ScannerScreen(
 
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
-                                    text = stringResource(R.string.start_scanning),
+                                    text = startScanningText,
                                     style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.Bold,
                                     textAlign = TextAlign.Center
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = "Capture or select a document image for smart perspective correction",
+                                    text = stringResource(R.string.take_a_photo),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                                     textAlign = TextAlign.Center
@@ -743,27 +722,20 @@ fun ScannerScreen(
                                     when {
                                         cameraPermission.status.isGranted -> {
                                             try {
-                                                println("DEBUG: Camera permission granted, creating temp URI")
                                                 ScanManager.cleanupTempFiles(context)
-
                                                 val tempUri = ScanManager.createTempImageUri(context)
                                                 if (tempUri != null) {
-                                                    println("DEBUG: Temp URI created successfully: $tempUri")
                                                     cameraTempUri = tempUri
-                                                    println("DEBUG: Launching camera with URI: $tempUri")
                                                     cameraLauncher.launch(tempUri)
                                                 } else {
-                                                    println("DEBUG: Failed to create temp URI")
-                                                    saveError = "Failed to create temporary file for camera"
+                                                    saveError = context.getString(R.string.operation_failed)
                                                     scope.launch {
                                                         kotlinx.coroutines.delay(3000)
                                                         saveError = null
                                                     }
                                                 }
                                             } catch (e: Exception) {
-                                                println("DEBUG: Exception in camera button: ${e.message}")
-                                                e.printStackTrace()
-                                                saveError = "Camera error: ${e.message}"
+                                                saveError = "${context.getString(R.string.operation_failed)}: ${e.message}"
                                                 scope.launch {
                                                     kotlinx.coroutines.delay(3000)
                                                     saveError = null
@@ -771,7 +743,6 @@ fun ScannerScreen(
                                             }
                                         }
                                         else -> {
-                                            println("DEBUG: Requesting camera permission")
                                             cameraPermission.launchPermissionRequest()
                                         }
                                     }
@@ -783,7 +754,7 @@ fun ScannerScreen(
                             ) {
                                 Icon(Icons.Default.CameraAlt, null, Modifier.size(20.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text(stringResource(R.string.take_photo), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                                Text(takePhotoText, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                             }
 
                             // Gallery button
@@ -792,11 +763,9 @@ fun ScannerScreen(
                                     when {
                                         mediaPermissionsState.allPermissionsGranted -> {
                                             try {
-                                                println("DEBUG: Launching gallery picker")
                                                 galleryLauncher.launch("image/*")
                                             } catch (e: Exception) {
-                                                println("DEBUG: Gallery launcher exception: ${e.message}")
-                                                saveError = "Gallery error: ${e.message}"
+                                                saveError = "${context.getString(R.string.operation_failed)}: ${e.message}"
                                                 scope.launch {
                                                     kotlinx.coroutines.delay(3000)
                                                     saveError = null
@@ -804,7 +773,6 @@ fun ScannerScreen(
                                             }
                                         }
                                         else -> {
-                                            println("DEBUG: Requesting media permissions")
                                             mediaPermissionsState.launchMultiplePermissionRequest()
                                         }
                                     }
@@ -815,7 +783,7 @@ fun ScannerScreen(
                             ) {
                                 Icon(Icons.Default.PhotoLibrary, null, Modifier.size(20.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text(stringResource(R.string.select_from_gallery), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                                Text(selectFromGalleryText, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                             }
 
                             // Always visible "View My Scans" button at the bottom
@@ -828,7 +796,7 @@ fun ScannerScreen(
                             ) {
                                 Icon(Icons.Default.Folder, null, Modifier.size(20.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text(stringResource(R.string.view_my_scans), fontWeight = FontWeight.Medium)
+                                Text(viewMyScansText, fontWeight = FontWeight.Medium)
                             }
 
                             // Permission status message
@@ -838,10 +806,10 @@ fun ScannerScreen(
                                         Text(
                                             text = when {
                                                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
-                                                    stringResource(R.string.camera_and_photo_access_permissions_are_required_on_android_14_you_can_grant_partial_photo_access)
+                                                    cameraPhotoAccessText
                                                 }
                                                 else -> {
-                                                    stringResource(R.string.storage_and_camera_permissions_are_required_to_scan_documents)
+                                                    storageCameraPermissionRequired
                                                 }
                                             },
                                             style = MaterialTheme.typography.bodySmall,
@@ -861,9 +829,9 @@ fun ScannerScreen(
 
                                             Text(
                                                 text = when {
-                                                    hasFullAccess -> stringResource(R.string.full_photo_access_granted)
-                                                    hasPartialAccess -> stringResource(R.string.partial_photo_access_granted)
-                                                    else -> stringResource(R.string.photo_access_needed)
+                                                    hasFullAccess -> fullPhotoAccessText
+                                                    hasPartialAccess -> partialPhotoAccessText
+                                                    else -> photoAccessNeededText
                                                 },
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = if (hasFullAccess || hasPartialAccess) {

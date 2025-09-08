@@ -26,7 +26,7 @@
     <string name="select_from_gallery">Select from Gallery</string>
     <string name="select_document">Select Document</string>
     <string name="camera_failed">Failed to access camera</string>
-    <string name="processing">Processing...</string>
+    <string name="processing">Processing…</string>
     <string name="capture_document">Capture Document</string>
     <string name="scan_ready">Ready to scan</string>
 
@@ -54,7 +54,7 @@
     <string name="save_as_scan">Save as Scan</string>
     <string name="scan_another">Scan Another</string>
     <string name="saved_to">Saved to: %1$s</string>
-    <string name="saving">Saving...</string>
+    <string name="saving">Saving…</string>
 
     <!-- PDF Operations -->
     <string name="create_pdf">Create PDF</string>
@@ -63,7 +63,7 @@
     <string name="pdf_failed">Failed to create PDF</string>
     <string name="export_pdf">Export as PDF</string>
     <string name="pdf_created">PDF Created Successfully</string>
-    <string name="creating_pdf">Creating PDF...</string>
+    <string name="creating_pdf">Creating PDF…</string>
 
     <!-- Share Operations -->
     <string name="share">Share</string>
@@ -114,8 +114,8 @@
     <string name="take_a_photo">Take a photo or select an image to crop and scan</string>
     <string name="crop_operation_failed">Crop operation failed</string>
     <string name="failed_to_compress_image">Failed to compress image</string>
-    <string name="loading_image">Loading image...</string>
-    <string name="processing_crop">Processing crop...</string>
+    <string name="loading_image">Loading image…</string>
+    <string name="processing_crop">Processing crop…</string>
     <string name="scanned_document">Scanned Document</string>
     <string name="view_my_scans">View My Scans</string>
     <string name="scan_complete">Scan Complete</string>
@@ -135,7 +135,7 @@
 
     <!-- Status Messages -->
     <string name="ready">Ready</string>
-    <string name="processing_please_wait">Processing, please wait...</string>
+    <string name="processing_please_wait">Processing, please wait…</string>
     <string name="operation_successful">Operation Successful</string>
     <string name="operation_failed">Operation Failed</string>
     <string name="try_again">Try Again</string>
@@ -158,5 +158,31 @@
 
     <string name="preview_scans">Preview Scans</string>
     <string name="drag_to_reorder">Drag to reorder scans</string>
+    <string name="failed_to_share_files">Failed to share files: %1$s</string>
+    <string name="manage_scans">Manage Scans</string>
+    <string name="order_reset_to_original">Order reset to original</string>
+
+    <string name="items">items</string>
+    <string name="grid_view">Grid View</string>
+    <string name="list_view">List View</string>
+    <string name="clear">Clear</string>
+    <string name="scansDeletedText">Delete Text</string>
+    <string name="failed_to_delete_items">Failed to delete items</string>
+    <string name="selected_1">%1$d selected</string>
+    <string name="item_scale">item_scale</string>
+    <string name="pdf_document">PDF Document</string>
+    <string name="drag_the_corner_points_to_adjust_the_document_boundaries_then_tap_apply_to_correct_perspective">Drag the corner points to adjust the document boundaries, then tap Apply to correct perspective.</string>
+    <string name="save">Save</string>
+    <string name="edit_again">Edit Again</string>
+    <string name="original_image">Original Image</string>
+    <string name="corrected_image">Corrected Image</string>
+    <string name="processing_perspective_correction">Processing perspective correction...</string>
+    <string name="failed_to_load_image">Failed to load image</string>
+    <string name="reset_order">Reset order</string>
+    <string name="no_images_found">No images found</string>
+    <string name="scan_some_documents_to_get_started">Scan some documents to get started</string>
+    <string name="reorder_your_scans">Reorder your scans</string>
+    <string name="long_press_and_drag_to_reorder_tap_to_view_full_size_long_press_delete_button_to_remove">• Long press and drag to reorder\n• Tap to view full size\n• Long press delete button to remove</string>
+    <string name="are_you_sure_you_want_to_delete_this_action_cannot_be_undone">Are you sure you want to delete \"%1$s\"?\n\nThis action cannot be undone.</string>
 
 </resources>

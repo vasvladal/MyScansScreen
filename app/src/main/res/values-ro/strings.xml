@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Scaner Documente</string>
 
@@ -10,21 +11,21 @@
 
     <!-- My Scans Screen -->
     <string name="my_scans">Scanările mele</string>
-    <string name="no_scans_yet">Nicio scanare încă</string>
-    <string name="no_scans_description">Atinge butonul camerei pentru a începe scanarea documentelor</string>
+    <string name="no_scans_yet">Încă nu există scanări</string>
+    <string name="no_scans_description">Apăsați butonul camerei pentru a începe scanarea documentelor</string>
     <string name="new_scan">Scanare nouă</string>
     <string name="selected_count">Selectate:</string>
     <string name="select_scans">Selectează scanări</string>
-    <string name="scan_gallery">Galerie Scanări</string>
+    <string name="scan_gallery">Galerie scanări</string>
     <string name="recent_scans">Scanări recente</string>
 
     <!-- Scanner Screen -->
     <string name="document_scanner">Scaner Documente</string>
-    <string name="take_photo">Fotografiează</string>
+    <string name="take_photo">Fă o poză</string>
     <string name="select_from_gallery">Selectează din galerie</string>
     <string name="select_document">Selectează document</string>
     <string name="camera_failed">Nu s-a putut accesa camera</string>
-    <string name="processing">Se procesează...</string>
+    <string name="processing">Procesare…</string>
     <string name="capture_document">Capturează document</string>
     <string name="scan_ready">Gata de scanare</string>
 
@@ -37,48 +38,48 @@
 
     <!-- Delete Operations -->
     <string name="delete_scan">Șterge scanarea</string>
-    <string name="delete_scans">Șterge</string>
+    <string name="delete_scans">Șterge elemente</string>
     <string name="delete_scan_confirmation">Sigur doriți să ștergeți această scanare?</string>
     <string name="delete_confirmation">Sigur doriți să ștergeți</string>
     <string name="delete">Șterge</string>
-    <string name="scan_deleted">Scanare ștearsă</string>
-    <string name="scans_deleted">Scanări șterse</string>
-    <string name="delete_failed">Ștergerea scanării a eșuat</string>
+    <string name="scan_deleted">Scanarea a fost ștearsă</string>
+    <string name="scans_deleted">Elemente șterse</string>
+    <string name="delete_failed">Nu s-a putut șterge scanarea</string>
     <string name="delete_permanently">Șterge permanent</string>
 
     <!-- Save Operations -->
-    <string name="scan_saved">Scanarea salvată cu succes</string>
-    <string name="save_failed">Salvarea scanării a eșuat</string>
-    <string name="save_as_scan">Salvează ca scan</string>
+    <string name="scan_saved">Scanarea a fost salvată cu succes</string>
+    <string name="save_failed">Nu s-a putut salva scanarea</string>
+    <string name="save_as_scan">Salvează ca scanare</string>
     <string name="scan_another">Scanează altul</string>
     <string name="saved_to">Salvat în: %1$s</string>
-    <string name="saving">Se salvează...</string>
+    <string name="saving">Se salvează…</string>
 
     <!-- PDF Operations -->
     <string name="create_pdf">Creează PDF</string>
     <string name="create_pdf_confirmation">Creează PDF din</string>
     <string name="pdf_saved">PDF salvat în:</string>
-    <string name="pdf_failed">Crearea PDF a eșuat</string>
+    <string name="pdf_failed">Nu s-a putut crea PDF</string>
     <string name="export_pdf">Exportă ca PDF</string>
     <string name="pdf_created">PDF creat cu succes</string>
-    <string name="creating_pdf">Se creează PDF...</string>
+    <string name="creating_pdf">Se creează PDF…</string>
 
     <!-- Share Operations -->
     <string name="share">Partajează</string>
-    <string name="share_failed">Partajarea fișierelor a eșuat</string>
+    <string name="share_failed">Nu s-au putut partaja fișierele</string>
     <string name="share_scans">Partajează scanări</string>
     <string name="share_as_pdf">Partajează ca PDF</string>
     <string name="share_as_images">Partajează ca imagini</string>
     <string name="share_files">Partajează fișiere</string>
 
     <!-- Permissions -->
-    <string name="camera_permission_required">Permisiunea camerei este necesară pentru a fotografia</string>
-    <string name="storage_permission_required">Permisiunea de stocare este necesară pentru a salva scanări</string>
-    <string name="camera_and_photo_access_permissions_are_required_on_android_14_you_can_grant_partial_photo_access">Sunt necesare permisiunile pentru cameră și acces la foto. Pe Android 14+, puteți acorda acces parțial la foto.</string>
-    <string name="storage_and_camera_permissions_are_required_to_scan_documents">Permisiunile de stocare și cameră sunt necesare pentru a scana documente</string>
+    <string name="camera_permission_required">Este necesară permisiunea pentru cameră pentru a face fotografii</string>
+    <string name="storage_permission_required">Este necesară permisiunea de stocare pentru a salva scanări</string>
+    <string name="camera_and_photo_access_permissions_are_required_on_android_14_you_can_grant_partial_photo_access">Sunt necesare permisiuni pentru cameră și acces la foto. Pe Android 14+, puteți acorda acces parțial la foto.</string>
+    <string name="storage_and_camera_permissions_are_required_to_scan_documents">Sunt necesare permisiuni de stocare și cameră pentru a scana documente</string>
     <string name="full_photo_access_granted">✓ Acces complet la foto acordat</string>
     <string name="partial_photo_access_granted">✓ Acces parțial la foto acordat</string>
-    <string name="photo_access_needed">⚠ Acces la foto necesar</string>
+    <string name="photo_access_needed">⚠ Este necesar acces la foto</string>
     <string name="grant_permissions">Acordă permisiuni</string>
 
     <!-- Menu and Settings -->
@@ -99,7 +100,7 @@
     <!-- About and App Info -->
     <string name="about_description">Aceasta este o aplicație puternică de scanare a documentelor cu decupare inteligentă și capabilități de export PDF.</string>
     <string name="version_info">Informații versiune</string>
-    <string name="app_version">Versiunea aplicației</string>
+    <string name="app_version">Versiune aplicație</string>
 
     <!-- Languages -->
     <string name="english">English</string>
@@ -109,11 +110,11 @@
 
     <!-- Scanning Process -->
     <string name="start_scanning">Începe scanarea</string>
-    <string name="take_a_photo">Fă o fotografie sau selectează o imagine pentru a o decupa și scana</string>
+    <string name="take_a_photo">Fă o poză sau selectează o imagine pentru a o decupa și scana</string>
     <string name="crop_operation_failed">Operațiunea de decupare a eșuat</string>
-    <string name="failed_to_compress_image">Comprimarea imaginii a eșuat</string>
-    <string name="loading_image">Se încarcă imaginea...</string>
-    <string name="processing_crop">Se procesează decuparea...</string>
+    <string name="failed_to_compress_image">Nu s-a putut comprima imaginea</string>
+    <string name="loading_image">Se încarcă imaginea…</string>
+    <string name="processing_crop">Se procesează decuparea…</string>
     <string name="scanned_document">Document scanat</string>
     <string name="view_my_scans">Vezi scanările mele</string>
     <string name="scan_complete">Scanare completă</string>
@@ -122,7 +123,7 @@
     <!-- File Management -->
     <string name="file_operations">Operațiuni fișiere</string>
     <string name="export_options">Opțiuni export</string>
-    <string name="organize_scans">Organizează scanările</string>
+    <string name="organize_scans">Organizează scanări</string>
     <string name="storage_location">Locație stocare</string>
 
     <!-- Quality and Enhancement -->
@@ -133,7 +134,7 @@
 
     <!-- Status Messages -->
     <string name="ready">Gata</string>
-    <string name="processing_please_wait">Se procesează, așteptați...</string>
+    <string name="processing_please_wait">Se procesează, vă rugăm așteptați…</string>
     <string name="operation_successful">Operațiune reușită</string>
     <string name="operation_failed">Operațiune eșuată</string>
     <string name="try_again">Încearcă din nou</string>
@@ -142,19 +143,45 @@
     <string name="scan_item_description">Element scanat din %1$s</string>
     <string name="app_icon_description">Pictograma aplicației Scaner Documente</string>
     <string name="menu_button_description">Deschide opțiunile meniului</string>
-    <string name="camera_button_description">Fă o fotografie cu camera</string>
+    <string name="camera_button_description">Fă o poză cu camera</string>
     <string name="gallery_button_description">Selectează imagine din galerie</string>
     <string name="perspective_correction">Corecție perspectivă</string>
     <string name="reset">Resetează</string>
     <string name="apply">Aplică</string>
     <string name="perspective_instructions">Trageți colțurile pentru a le alinia cu marginile mesei</string>
-    <string name="choose_how_to_process_your_document">Choose how to process your document:</string>
-    <string name="document_processing">Document Processing</string>
-    <string name="smart_perspective_correction_automatically_detects_and_corrects_document_perspective_recommended">🔧 Smart Perspective Correction: Automatically detects and corrects document perspective (Recommended)</string>
-    <string name="camera_captured_an_invalid_image_please_try_again">Camera captured an invalid image. Please try again.</string>
-    <string name="perspective_correction_failed">Perspective correction failed: %1$s</string>
+    <string name="choose_how_to_process_your_document">Alege cum să procesezi documentul:</string>
+    <string name="document_processing">Procesare document</string>
+    <string name="smart_perspective_correction_automatically_detects_and_corrects_document_perspective_recommended">🔧 Corecție perspectivă inteligentă: detectează și corectează automat perspectiva documentului (Recomandat)</string>
+    <string name="camera_captured_an_invalid_image_please_try_again">Camera a capturat o imagine invalidă. Vă rugăm să încercați din nou.</string>
+    <string name="perspective_correction_failed">Corecția perspectivei a eșuat: %1$s</string>
 
-    <string name="preview_scans">Preview Scans</string>
-    <string name="drag_to_reorder">Drag to reorder scans</string>
+    <string name="preview_scans">Previzualizare scanări</string>
+    <string name="drag_to_reorder">Trageți pentru a reordona scanările</string>
+    <string name="failed_to_share_files">Nu s-au putut partaja fișierele: %1$s</string>
+    <string name="manage_scans">Gestionează scanări</string>
+    <string name="order_reset_to_original">Ordinea a fost resetată la original</string>
+
+    <string name="items">elemente</string>
+    <string name="grid_view">Vizualizare grilă</string>
+    <string name="list_view">Vizualizare listă</string>
+    <string name="clear">Curăță</string>
+    <string name="scansDeletedText">Text ștergere</string>
+    <string name="failed_to_delete_items">Nu s-au putut șterge elementele</string>
+    <string name="selected_1">Selectate: %1$d</string>
+    <string name="item_scale">Scală element</string>
+    <string name="pdf_document">Document PDF</string>
+    <string name="drag_the_corner_points_to_adjust_the_document_boundaries_then_tap_apply_to_correct_perspective">Trageți punctele de colț pentru a ajusta marginile documentului, apoi atingeți Aplică pentru a corecta perspectiva.</string>
+    <string name="save">Salvează</string>
+    <string name="edit_again">Editează din nou</string>
+    <string name="original_image">Imaginea originală</string>
+    <string name="corrected_image">Imaginea corectată</string>
+    <string name="processing_perspective_correction">Se procesează corecția perspectivei…</string>
+    <string name="failed_to_load_image">Nu s-a putut încărca imaginea</string>
+    <string name="reset_order">Resetează ordinea</string>
+    <string name="no_images_found">Nu s-au găsit imagini</string>
+    <string name="scan_some_documents_to_get_started">Scanați câteva documente pentru a începe</string>
+    <string name="reorder_your_scans">Reordonați-vă scanările</string>
+    <string name="long_press_and_drag_to_reorder_tap_to_view_full_size_long_press_delete_button_to_remove">• Apăsați lung și trageți pentru a reordona\n• Atingeți pentru a vedea dimensiunea completă\n• Apăsați lung butonul de ștergere pentru a elimina</string>
+    <string name="are_you_sure_you_want_to_delete_this_action_cannot_be_undone">Sigur doriți să ștergeți \"%1$s\"?\n\nAceastă acțiune nu poate fi anulată.</string>
 
 </resources>

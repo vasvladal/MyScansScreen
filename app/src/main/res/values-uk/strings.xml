@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Сканер документів</string>
 
@@ -6,17 +7,17 @@
     <string name="cancel">Скасувати</string>
     <string name="done">Готово</string>
     <string name="next">Далі</string>
-    <string name="previous">Попередній</string>
+    <string name="previous">Назад</string>
 
     <!-- My Scans Screen -->
-    <string name="my_scans">Мої сканування</string>
-    <string name="no_scans_yet">Ще немає сканувань</string>
+    <string name="my_scans">Мої скани</string>
+    <string name="no_scans_yet">Сканів поки немає</string>
     <string name="no_scans_description">Натисніть кнопку камери, щоб почати сканування документів</string>
-    <string name="new_scan">Нове сканування</string>
-    <string name="selected_count">Вибрані:</string>
-    <string name="select_scans">Вибрати сканування</string>
+    <string name="new_scan">Новий скан</string>
+    <string name="selected_count">Вибрано:</string>
+    <string name="select_scans">Вибрати скани</string>
     <string name="scan_gallery">Галерея сканів</string>
-    <string name="recent_scans">Останні сканування</string>
+    <string name="recent_scans">Останні скани</string>
 
     <!-- Scanner Screen -->
     <string name="document_scanner">Сканер документів</string>
@@ -24,12 +25,12 @@
     <string name="select_from_gallery">Вибрати з галереї</string>
     <string name="select_document">Вибрати документ</string>
     <string name="camera_failed">Не вдалося отримати доступ до камери</string>
-    <string name="processing">Обробка...</string>
-    <string name="capture_document">Захоплення документа</string>
-    <string name="scan_ready">Готово до сканування</string>
+    <string name="processing">Обробка…</string>
+    <string name="capture_document">Захопити документ</string>
+    <string name="scan_ready">Готовий до сканування</string>
 
     <!-- Preview Screen -->
-    <string name="preview_scan">Попередній перегляд</string>
+    <string name="preview_scan">Попередній перегляд скану</string>
     <string name="scan_not_found">Скан не знайдено</string>
     <string name="crop_and_enhance">Обрізати та покращити</string>
     <string name="adjust_corners">Налаштувати кути</string>
@@ -37,12 +38,12 @@
 
     <!-- Delete Operations -->
     <string name="delete_scan">Видалити скан</string>
-    <string name="delete_scans">Видалити</string>
-    <string name="delete_scan_confirmation">Ви впевнені, що хочете видалити це сканування?</string>
+    <string name="delete_scans">Видалити елементи</string>
+    <string name="delete_scan_confirmation">Ви впевнені, що хочете видалити цей скан?</string>
     <string name="delete_confirmation">Ви впевнені, що хочете видалити</string>
     <string name="delete">Видалити</string>
     <string name="scan_deleted">Скан видалено</string>
-    <string name="scans_deleted">Сканування видалено</string>
+    <string name="scans_deleted">Елементи видалено</string>
     <string name="delete_failed">Не вдалося видалити скан</string>
     <string name="delete_permanently">Видалити назавжди</string>
 
@@ -50,30 +51,30 @@
     <string name="scan_saved">Скан успішно збережено</string>
     <string name="save_failed">Не вдалося зберегти скан</string>
     <string name="save_as_scan">Зберегти як скан</string>
-    <string name="scan_another">Сканувати ще</string>
+    <string name="scan_another">Сканувати інший</string>
     <string name="saved_to">Збережено в: %1$s</string>
-    <string name="saving">Збереження...</string>
+    <string name="saving">Збереження…</string>
 
     <!-- PDF Operations -->
     <string name="create_pdf">Створити PDF</string>
     <string name="create_pdf_confirmation">Створити PDF з</string>
     <string name="pdf_saved">PDF збережено в:</string>
     <string name="pdf_failed">Не вдалося створити PDF</string>
-    <string name="export_pdf">Експортувати як PDF</string>
+    <string name="export_pdf">Експорт у PDF</string>
     <string name="pdf_created">PDF успішно створено</string>
-    <string name="creating_pdf">Створення PDF...</string>
+    <string name="creating_pdf">Створення PDF…</string>
 
     <!-- Share Operations -->
     <string name="share">Поділитися</string>
     <string name="share_failed">Не вдалося поділитися файлами</string>
     <string name="share_scans">Поділитися сканами</string>
     <string name="share_as_pdf">Поділитися як PDF</string>
-    <string name="share_as_images">Поділитися як зображеннями</string>
+    <string name="share_as_images">Поділитися як зображення</string>
     <string name="share_files">Поділитися файлами</string>
 
     <!-- Permissions -->
-    <string name="camera_permission_required">Для зйомки фото необхідний дозвіл на використання камери</string>
-    <string name="storage_permission_required">Для збереження сканів необхідний дозвіл на доступ до сховища</string>
+    <string name="camera_permission_required">Для зйомки фото потрібен дозвіл на використання камери</string>
+    <string name="storage_permission_required">Для збереження сканів потрібен дозвіл на доступ до сховища</string>
     <string name="camera_and_photo_access_permissions_are_required_on_android_14_you_can_grant_partial_photo_access">Потрібні дозволи на доступ до камери та фото. На Android 14+ ви можете надати частковий доступ до фото.</string>
     <string name="storage_and_camera_permissions_are_required_to_scan_documents">Для сканування документів потрібні дозволи на доступ до сховища та камери</string>
     <string name="full_photo_access_granted">✓ Надано повний доступ до фото</string>
@@ -84,22 +85,22 @@
     <!-- Menu and Settings -->
     <string name="menu">Меню</string>
     <string name="language">Мова</string>
-    <string name="about">Про додаток</string>
+    <string name="about">Про програму</string>
     <string name="select_language">Вибрати мову</string>
     <string name="settings">Налаштування</string>
-    <string name="preferences">Налаштування</string>
+    <string name="preferences">Уподобання</string>
 
     <!-- Dialog Actions -->
-    <string name="ok">OK</string>
+    <string name="ok">ОК</string>
     <string name="yes">Так</string>
     <string name="no">Ні</string>
     <string name="confirm">Підтвердити</string>
     <string name="dismiss">Закрити</string>
 
     <!-- About and App Info -->
-    <string name="about_description">Це потужний додаток для сканування документів з функцією розумного обрізання та експорту в PDF.</string>
+    <string name="about_description">Це потужний додаток для сканування документів з інтелектуальним обрізанням та можливістю експорту в PDF.</string>
     <string name="version_info">Інформація про версію</string>
-    <string name="app_version">Версія додатка</string>
+    <string name="app_version">Версія додатку</string>
 
     <!-- Languages -->
     <string name="english">English</string>
@@ -110,20 +111,20 @@
     <!-- Scanning Process -->
     <string name="start_scanning">Почати сканування</string>
     <string name="take_a_photo">Зробіть фото або виберіть зображення для обрізки та сканування</string>
-    <string name="crop_operation_failed">Не вдалося виконати обрізку</string>
+    <string name="crop_operation_failed">Помилка операції обрізки</string>
     <string name="failed_to_compress_image">Не вдалося стиснути зображення</string>
-    <string name="loading_image">Завантаження зображення...</string>
-    <string name="processing_crop">Обробка обрізки...</string>
+    <string name="loading_image">Завантаження зображення…</string>
+    <string name="processing_crop">Обробка обрізки…</string>
     <string name="scanned_document">Відсканований документ</string>
-    <string name="view_my_scans">Переглянути мої сканування</string>
+    <string name="view_my_scans">Переглянути мої скани</string>
     <string name="scan_complete">Сканування завершено</string>
     <string name="auto_enhance">Автопокращення</string>
 
     <!-- File Management -->
     <string name="file_operations">Операції з файлами</string>
     <string name="export_options">Варіанти експорту</string>
-    <string name="organize_scans">Організувати сканування</string>
-    <string name="storage_location">Місце збереження</string>
+    <string name="organize_scans">Організувати скани</string>
+    <string name="storage_location">Місце зберігання</string>
 
     <!-- Quality and Enhancement -->
     <string name="image_quality">Якість зображення</string>
@@ -133,28 +134,54 @@
 
     <!-- Status Messages -->
     <string name="ready">Готово</string>
-    <string name="processing_please_wait">Йде обробка, зачекайте...</string>
+    <string name="processing_please_wait">Обробка, будь ласка зачекайте…</string>
     <string name="operation_successful">Операція успішна</string>
     <string name="operation_failed">Помилка операції</string>
-    <string name="try_again">Спробувати ще</string>
+    <string name="try_again">Спробувати знову</string>
 
     <!-- Accessibility -->
-    <string name="scan_item_description">Елемент сканування від %1$s</string>
-    <string name="app_icon_description">Іконка додатка Сканер документів</string>
+    <string name="scan_item_description">Елемент скану з %1$s</string>
+    <string name="app_icon_description">Іконка додатку Сканер документів</string>
     <string name="menu_button_description">Відкрити опції меню</string>
     <string name="camera_button_description">Зробити фото за допомогою камери</string>
     <string name="gallery_button_description">Вибрати зображення з галереї</string>
     <string name="perspective_correction">Корекція перспективи</string>
     <string name="reset">Скинути</string>
     <string name="apply">Застосувати</string>
-    <string name="perspective_instructions">Перетягніть кути, щоб вирівняти їх по краях столу</string>
-    <string name="choose_how_to_process_your_document">Choose how to process your document:</string>
-    <string name="document_processing">Document Processing</string>
-    <string name="smart_perspective_correction_automatically_detects_and_corrects_document_perspective_recommended">🔧 Smart Perspective Correction: Automatically detects and corrects document perspective (Recommended)</string>
-    <string name="camera_captured_an_invalid_image_please_try_again">Camera captured an invalid image. Please try again.</string>
-    <string name="perspective_correction_failed">Perspective correction failed: %1$s</string>
+    <string name="perspective_instructions">Перетягніть кути для вирівнювання по краях столу</string>
+    <string name="choose_how_to_process_your_document">Виберіть спосіб обробки вашого документа:</string>
+    <string name="document_processing">Обробка документа</string>
+    <string name="smart_perspective_correction_automatically_detects_and_corrects_document_perspective_recommended">🔧 Розумна корекція перспективи: автоматично виявляє та коригує перспективу документа (Рекомендується)</string>
+    <string name="camera_captured_an_invalid_image_please_try_again">Камера захопила неприпустиме зображення. Будь ласка, спробуйте ще раз.</string>
+    <string name="perspective_correction_failed">Помилка корекції перспективи: %1$s</string>
 
-    <string name="preview_scans">Preview Scans</string>
-    <string name="drag_to_reorder">Drag to reorder scans</string>
+    <string name="preview_scans">Попередній перегляд сканів</string>
+    <string name="drag_to_reorder">Перетягніть, щоб змінити порядок сканів</string>
+    <string name="failed_to_share_files">Не вдалося поділитися файлами: %1$s</string>
+    <string name="manage_scans">Управління сканами</string>
+    <string name="order_reset_to_original">Порядок скинуто до початкового</string>
 
-</resources>
+    <string name="items">елементи</string>
+    <string name="grid_view">Вид сіткою</string>
+    <string name="list_view">Вид списком</string>
+    <string name="clear">Очистити</string>
+    <string name="scansDeletedText">Текст видалення</string>
+    <string name="failed_to_delete_items">Не вдалося видалити елементи</string>
+    <string name="selected_1">Вибрано: %1$d</string>
+    <string name="item_scale">Масштаб елемента</string>
+    <string name="pdf_document">PDF документ</string>
+    <string name="drag_the_corner_points_to_adjust_the_document_boundaries_then_tap_apply_to_correct_perspective">Перетягніть кутові точки, щоб налаштувати межі документа, потім натисніть «Застосувати», щоб виправити перспективу.</string>
+    <string name="save">Зберегти</string>
+    <string name="edit_again">Редагувати знову</string>
+    <string name="original_image">Оригінальне зображення</string>
+    <string name="corrected_image">Виправлене зображення</string>
+    <string name="processing_perspective_correction">Обробка корекції перспективи…</string>
+    <string name="failed_to_load_image">Не вдалося завантажити зображення</string>
+    <string name="reset_order">Скинути порядок</string>
+    <string name="no_images_found">Зображень не знайдено</string>
+    <string name="scan_some_documents_to_get_started">Відскануйте кілька документів, щоб почати</string>
+    <string name="reorder_your_scans">Змініть порядок ваших сканувань</string>
+    <string name="long_press_and_drag_to_reorder_tap_to_view_full_size_long_press_delete_button_to_remove">• Довге натискання та перетягування для зміни порядку\n• Натисніть, щоб переглянути повний розмір\n• Довге натискання кнопки видалення для видалення</string>
+    <string name="are_you_sure_you_want_to_delete_this_action_cannot_be_undone">Ви впевнені, що хочете видалити \"%1$s\"?\n\nЦю дію не можна скасувати.
+
+    </string></resources>
