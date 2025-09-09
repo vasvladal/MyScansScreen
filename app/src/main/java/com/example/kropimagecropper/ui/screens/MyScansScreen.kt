@@ -210,7 +210,6 @@ fun MyScansScreen(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            //contentDescription = if (isSelectMode) cancelText else "Scanner"
                             contentDescription = if (isSelectMode) cancelText else stringResource(R.string.document_scanner)
                         )
                     }
@@ -375,6 +374,7 @@ fun MyScansScreen(
                             isSelectMode = true
                         }
                     },
+                    onClearSelection = { selected = emptySet() },
                     padding = padding
                 )
             }
@@ -396,12 +396,10 @@ fun MyScansScreen(
                                 selected = emptySet()
                                 isSelectMode = false
                                 showDeleteDialog = false
-                                //Toast.makeText(context, scansDeletedText, Toast.LENGTH_SHORT).show()
-                                Toast.makeText(context, context.getString(R.string.scansDeletedText), Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, scansDeletedText, Toast.LENGTH_SHORT).show()
                             },
                             onError = {
-                                Toast.makeText(context, "Failed to delete items", Toast.LENGTH_SHORT).show()
-                                Toast.makeText(context, context.getString(R.string.failed_to_delete_items), Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, failedToDeleteText, Toast.LENGTH_SHORT).show()
                             }
                         )
                     }
@@ -559,6 +557,7 @@ private fun ScansContent(
     onSelect: (File, Boolean) -> Unit,
     onItemClick: (File) -> Unit,
     onLongPress: (File) -> Unit,
+    onClearSelection: () -> Unit,
     padding: PaddingValues
 ) {
     Column(
@@ -615,9 +614,7 @@ private fun ScansContent(
 
                     if (selected.isNotEmpty()) {
                         FilledTonalButton(
-                            onClick = {
-                                onSelect(File(""), false) // Clear selection
-                            }
+                            onClick = onClearSelection
                         ) {
                             Text(stringResource(R.string.clear))
                         }
@@ -892,8 +889,6 @@ private fun openPdfFile(context: android.content.Context, file: File) {
 
         context.startActivity(intent)
     } catch (e: Exception) {
-        //Toast.makeText(context, "No PDF viewer found", Toast.LENGTH_SHORT).show()
-        //Toast.makeText(context, stringResource(R.string.operation_failed), Toast.LENGTH_SHORT).show()
         Toast.makeText(context, context.getString(R.string.operation_failed), Toast.LENGTH_SHORT).show()
     }
 }

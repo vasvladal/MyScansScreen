@@ -43,7 +43,8 @@ import kotlin.math.sqrt
 @Composable
 fun PerspectiveCorrectionScreen(
     imageUri: Uri,
-    onResult: (Bitmap) -> Unit,
+    onResult: (Bitmap) -> Unit
+    ,
     onCancel: () -> Unit
 ) {
     val context = LocalContext.current

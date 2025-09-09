@@ -483,8 +483,12 @@ fun ScannerScreen(
                                             scope.launch {
                                                 try {
                                                     withContext(Dispatchers.IO) {
-                                                        val inputStream = context.contentResolver.openInputStream(selectedImageUri!!)
-                                                        val bitmap = BitmapFactory.decodeStream(inputStream)
+                                                        val inputStream =
+                                                            context.contentResolver.openInputStream(
+                                                                selectedImageUri!!
+                                                            )
+                                                        val bitmap =
+                                                            BitmapFactory.decodeStream(inputStream)
                                                         inputStream?.close()
 
                                                         if (bitmap != null) {
@@ -496,7 +500,8 @@ fun ScannerScreen(
                                                     }
                                                 } catch (e: Exception) {
                                                     withContext(Dispatchers.Main) {
-                                                        saveError = context.getString(R.string.operation_failed)
+                                                        saveError =
+                                                            context.getString(R.string.operation_failed)
                                                         showCropOptions = false
                                                         selectedImageUri = null
                                                     }
@@ -526,17 +531,18 @@ fun ScannerScreen(
                                     Text(stringResource(R.string.crop_and_enhance))
                                 }
                             }
-                        },
-                        dismissButton = {
-                            TextButton(
-                                onClick = {
-                                    showCropOptions = false
-                                    selectedImageUri = null
-                                }
-                            ) {
-                                Text(cancelText)
-                            }
                         }
+//                        },
+//                        dismissButton = {
+//                            TextButton(
+//                                onClick = {
+//                                    showCropOptions = false
+//                                    selectedImageUri = null
+//                                }
+//                            ) {
+//                                Text(cancelText)
+//                            }
+//                        }
                     )
                 }
 

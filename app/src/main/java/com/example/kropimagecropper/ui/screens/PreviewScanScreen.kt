@@ -109,6 +109,7 @@ fun PreviewScanScreen(
 
         // Delete Dialog
         if (showDeleteDialog) {
+            // Replace the AlertDialog with:
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
                 title = { Text(stringResource(R.string.delete_scan)) },
@@ -125,17 +126,10 @@ fun PreviewScanScreen(
                             onBack()
                         }
                     ) {
-                        Text(
-                            text = stringResource(R.string.delete),
-                            color = MaterialTheme.colorScheme.onError
-                        )
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDeleteDialog = false }) {
-                        Text(stringResource(R.string.cancel))
+                        Text(stringResource(R.string.delete))
                     }
                 }
+                // Removed explicit dismissButton
             )
         }
     }

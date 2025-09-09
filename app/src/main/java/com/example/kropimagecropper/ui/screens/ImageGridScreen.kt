@@ -251,7 +251,8 @@ fun ImageGridScreen(
                         stringResource(
                             R.string.are_you_sure_you_want_to_delete_this_action_cannot_be_undone,
                             itemToDelete.file.name
-                        ))
+                        )
+                    )
                 },
                 confirmButton = {
                     Button(
@@ -259,19 +260,8 @@ fun ImageGridScreen(
                             if (itemToDelete.file.delete()) {
                                 images = images.filter { it.id != itemToDelete.id }
                                 onOrderChanged(images.map { it.id })
-//                                Toast.makeText(
-//                                    context,
-//                                    stringResource(R.string.scan_deleted),
-//                                    Toast.LENGTH_SHORT
-//                                ).show()
                                 Toast.makeText(context, context.getString(R.string.scan_deleted), Toast.LENGTH_SHORT).show()
                             } else {
-//                                Toast.makeText(
-//                                    context,
-//                                    "Failed to delete scan",
-//                                    Toast.LENGTH_SHORT
-//                                ).show()
-
                                 Toast.makeText(context, context.getString(R.string.failed_to_delete_items), Toast.LENGTH_SHORT).show()
                             }
                             showDeleteDialog = null
@@ -280,14 +270,10 @@ fun ImageGridScreen(
                             containerColor = MaterialTheme.colorScheme.error
                         )
                     ) {
-                        Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.onError)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDeleteDialog = null }) {
-                        Text(stringResource(R.string.cancel))
+                        Text(stringResource(R.string.delete))
                     }
                 }
+                // Removed explicit dismissButton
             )
         }
     }
