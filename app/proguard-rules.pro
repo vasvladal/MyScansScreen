@@ -154,6 +154,7 @@
     public <init>();
     public <init>(...);
     public *** createParagraph();
+    #noinspection ShrinkerUnresolvedReference
     public void write(...);
     public void close();
     public static *** PICTURE_TYPE_JPEG;
@@ -171,6 +172,7 @@
     public void setFontSize(...);
     public void setItalic(...);
     public void setBold(...);
+    #noinspection ShrinkerUnresolvedReference
     public void addPicture(...);
     public void addBreak();
     public void setColor(...);
@@ -180,6 +182,7 @@
     public static *** CENTER;
     public static *** LEFT;
     public static *** RIGHT;
+    #noinspection ShrinkerUnresolvedReference
     public static *** JUSTIFY;
 }
 
