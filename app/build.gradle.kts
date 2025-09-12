@@ -113,15 +113,30 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
+
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+
             signingConfig = signingConfigs.getByName("release")
+
+            // Additional R8 configuration to be less aggressive
+            proguardFiles.add(file("proguard-rules.pro"))
         }
         debug {
             isMinifyEnabled = false
+            isShrinkResources = false
+            isDebuggable = true
         }
+    }
+
+    // Add this section to configure R8 more explicitly
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+        isCoreLibraryDesugaringEnabled = false // Disable if not needed
     }
 
     compileOptions {
