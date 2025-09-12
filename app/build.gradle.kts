@@ -273,6 +273,9 @@ dependencies {
     implementation(libs.opencv.opencv) {
         exclude(group = "org.jetbrains", module = "annotations")
     }
+
+    implementation(libs.poi)
+    implementation(libs.poi.ooxml)
 }
 
 // Simplified task for version management

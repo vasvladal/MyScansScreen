@@ -184,4 +184,14 @@
     <string name="long_press_and_drag_to_reorder_tap_to_view_full_size_long_press_delete_button_to_remove">• Apăsați lung și trageți pentru a reordona\n• Atingeți pentru a vedea dimensiunea completă\n• Apăsați lung butonul de ștergere pentru a elimina</string>
     <string name="are_you_sure_you_want_to_delete_this_action_cannot_be_undone">Sigur doriți să ștergeți \"%1$s\"?\n\nAceastă acțiune nu poate fi anulată.</string>
 
+
+    <!-- DOCX Operations -->
+    <string name="create_docx">Creează DOCX</string>
+    <string name="create_docx_confirmation">Creează DOCX din</string>
+    <string name="docx_saved">DOCX salvat în:</string>
+    <string name="docx_failed">Nu s-a putut crea DOCX</string>
+    <string name="export_docx">Exportă ca DOCX</string>
+    <string name="docx_created">DOCX creat cu succes</string>
+    <string name="creating_docx">Se creează DOCX…</string>
+    <string name="docx_document">Document DOCX</string>
 </resources>

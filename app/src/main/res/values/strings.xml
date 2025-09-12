@@ -185,4 +185,14 @@
     <string name="long_press_and_drag_to_reorder_tap_to_view_full_size_long_press_delete_button_to_remove">• Long press and drag to reorder\n• Tap to view full size\n• Long press delete button to remove</string>
     <string name="are_you_sure_you_want_to_delete_this_action_cannot_be_undone">Are you sure you want to delete \"%1$s\"?\n\nThis action cannot be undone.</string>
 
+    <!-- DOCX Operations -->
+    <string name="create_docx">Create DOCX</string>
+    <string name="create_docx_confirmation">Create DOCX from</string>
+    <string name="docx_saved">DOCX saved to:</string>
+    <string name="docx_failed">Failed to create DOCX</string>
+    <string name="export_docx">Export as DOCX</string>
+    <string name="docx_created">DOCX Created Successfully</string>
+    <string name="creating_docx">Creating DOCX…</string>
+    <string name="docx_document">Document DOCX</string>
+
 </resources>

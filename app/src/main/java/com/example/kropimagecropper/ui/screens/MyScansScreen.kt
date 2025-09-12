@@ -1,4 +1,4 @@
-// MyScansScreen.kt (Modernized UI)
+// MyScansScreen.kt (Modernized UI with DOCX support)
 package com.example.kropimagecropper.ui.screens
 
 import android.content.Intent
@@ -40,6 +40,7 @@ import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.example.kropimagecropper.R
 import com.example.kropimagecropper.data.ScanManager
+import com.example.kropimagecropper.utils.DocxCreator
 import com.example.kropimagecropper.utils.PdfCreator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -67,6 +68,7 @@ fun MyScansScreen(
     var isSelectMode by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showPdfDialog by remember { mutableStateOf(false) }
+    var showDocxDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(true) }
     var showViewOptions by remember { mutableStateOf(false) }
 
@@ -90,6 +92,10 @@ fun MyScansScreen(
     val createPdfConfirmationText = stringResource(R.string.create_pdf_confirmation)
     val pdfSavedText = stringResource(R.string.pdf_saved)
     val pdfFailedText = stringResource(R.string.pdf_failed)
+    val createDocxText = stringResource(R.string.create_docx)
+    val createDocxConfirmationText = stringResource(R.string.create_docx_confirmation)
+    val docxSavedText = stringResource(R.string.docx_saved)
+    val docxFailedText = stringResource(R.string.docx_failed)
     val itemsText = stringResource(R.string.items)
     val loadingScansText = stringResource(R.string.loading_image)
     val failedToDeleteText = stringResource(R.string.delete_failed)
@@ -98,7 +104,7 @@ fun MyScansScreen(
     val gridViewText = stringResource(R.string.grid_view)
     val listViewText = stringResource(R.string.list_view)
 
-    // Load scans including PDFs
+    // Load scans including PDFs and DOCXs
     LaunchedEffect(Unit) {
         isLoading = true
         val loaded = withContext(Dispatchers.IO) {
@@ -122,7 +128,18 @@ fun MyScansScreen(
             }
         }
 
-        scans = (loaded + pdfFiles).sortedByDescending { it.lastModified() }
+        val docxDir = DocxCreator.getDocxDirectory(context)
+        val docxFiles = withContext(Dispatchers.IO) {
+            if (docxDir.exists()) {
+                docxDir.listFiles { file ->
+                    file.isFile && file.extension.lowercase() == "docx"
+                }?.toList() ?: emptyList()
+            } else {
+                emptyList()
+            }
+        }
+
+        scans = (loaded + pdfFiles + docxFiles).sortedByDescending { it.lastModified() }
         isLoading = false
     }
 
@@ -141,7 +158,11 @@ fun MyScansScreen(
                         files[0]
                     )
                     putExtra(Intent.EXTRA_STREAM, uri)
-                    type = if (files[0].extension.lowercase() == "pdf") "application/pdf" else "image/jpeg"
+                    type = when (files[0].extension.lowercase()) {
+                        "pdf" -> "application/pdf"
+                        "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        else -> "image/jpeg"
+                    }
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 } else {
                     action = Intent.ACTION_SEND_MULTIPLE
@@ -234,6 +255,12 @@ fun MyScansScreen(
                                 onClick = { showPdfDialog = true }
                             )
                             ModernActionButton(
+                                icon = Icons.Default.Description,
+                                contentDescription = createDocxText,
+                                enabled = selected.isNotEmpty() && selected.none { it.extension.lowercase() == "docx" },
+                                onClick = { showDocxDialog = true }
+                            )
+                            ModernActionButton(
                                 icon = Icons.Default.Delete,
                                 contentDescription = deleteText,
                                 enabled = selected.isNotEmpty(),
@@ -275,6 +302,14 @@ fun MyScansScreen(
                                 DropdownMenuItem(
                                     text = { Text(createPdfText) },
                                     leadingIcon = { Icon(Icons.Default.PictureAsPdf, null) },
+                                    onClick = {
+                                        showViewOptions = false
+                                        isSelectMode = true
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(createDocxText) },
+                                    leadingIcon = { Icon(Icons.Default.Description, null) },
                                     onClick = {
                                         showViewOptions = false
                                         isSelectMode = true
@@ -360,10 +395,10 @@ fun MyScansScreen(
                                 selected + file
                             }
                         } else {
-                            if (file.extension.lowercase() == "pdf") {
-                                openPdfFile(context, file)
-                            } else {
-                                onOpenScan(file.absolutePath)
+                            when (file.extension.lowercase()) {
+                                "pdf" -> openPdfFile(context, file)
+                                "docx" -> openDocxFile(context, file)
+                                else -> onOpenScan(file.absolutePath)
                             }
                         }
                     },
@@ -444,6 +479,47 @@ fun MyScansScreen(
                     }
                 },
                 onDismiss = { showPdfDialog = false }
+            )
+        }
+
+        // DOCX Dialog
+        if (showDocxDialog) {
+            ModernAlertDialog(
+                title = createDocxText,
+                message = "$createDocxConfirmationText ${selected.size} $itemsText",
+                confirmText = createDocxText,
+                onConfirm = {
+                    scope.launch {
+                        try {
+                            val imageFiles = selected.filter {
+                                it.extension.lowercase() != "docx" &&
+                                        it.extension.lowercase() != "pdf"
+                            }
+                            DocxCreator.createDocx(context, imageFiles) { success, path ->
+                                if (success) {
+                                    Toast.makeText(
+                                        context,
+                                        "$docxSavedText${if (path != null) " $path" else ""}",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+
+                                    // Reload scans to include new DOCX
+                                    scope.launch {
+                                        scans = reloadScans(context)
+                                    }
+                                } else {
+                                    Toast.makeText(context, docxFailedText, Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Toast.makeText(context, docxFailedText, Toast.LENGTH_SHORT).show()
+                        }
+                        showDocxDialog = false
+                        isSelectMode = false
+                        selected = emptySet()
+                    }
+                },
+                onDismiss = { showDocxDialog = false }
             )
         }
     }
@@ -636,6 +712,7 @@ private fun ModernScanItem(
     onLongPress: () -> Unit
 ) {
     val isPdf = file.extension.lowercase() == "pdf"
+    val isDocx = file.extension.lowercase() == "docx"
     val haptics = LocalHapticFeedback.current
     val scale by animateFloatAsState(
         targetValue = if (isSelected) 0.95f else 1f,
@@ -688,6 +765,29 @@ private fun ModernScanItem(
                             contentDescription = stringResource(R.string.pdf_document),
                             modifier = Modifier.size(48.dp),
                             tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                } else if (isDocx) {
+                    // Modern DOCX display
+                    Box(
+                        modifier = Modifier
+                            .height(140.dp)
+                            .fillMaxWidth()
+                            .background(
+                                brush = Brush.linearGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.05f)
+                                    )
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Description,
+                            contentDescription = stringResource(R.string.docx_document),
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.secondary
                         )
                     }
                 } else {
@@ -780,6 +880,21 @@ private fun ModernScanItem(
                         ) {
                             Text(
                                 text = "PDF",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    } else if (isDocx) {
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.secondary,
+                                contentColor = MaterialTheme.colorScheme.onSecondary
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = "DOCX",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -893,6 +1008,39 @@ private fun openPdfFile(context: android.content.Context, file: File) {
     }
 }
 
+private fun openDocxFile(context: android.content.Context, file: File) {
+    try {
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        }
+
+        // Grant temporary permissions to all apps that can handle the intent
+        val resolvedIntentActivities = context.packageManager
+            .queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+
+        for (resolvedIntentInfo in resolvedIntentActivities) {
+            val packageName = resolvedIntentInfo.activityInfo.packageName
+            context.grantUriPermission(
+                packageName,
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
+        }
+
+        context.startActivity(intent)
+    } catch (e: Exception) {
+        Toast.makeText(context, context.getString(R.string.operation_failed), Toast.LENGTH_SHORT).show()
+    }
+}
+
 private suspend fun deleteSelectedFiles(
     selected: Set<File>,
     context: android.content.Context,
@@ -917,6 +1065,7 @@ private suspend fun reloadScans(context: android.content.Context): List<File> {
     return withContext(Dispatchers.IO) {
         val scanDir = ScanManager.getScansDirectory(context)
         val pdfDir = PdfCreator.getPdfDirectory(context)
+        val docxDir = DocxCreator.getDocxDirectory(context)
 
         val imageFiles = if (scanDir.exists()) {
             scanDir.listFiles { file ->
@@ -934,6 +1083,14 @@ private suspend fun reloadScans(context: android.content.Context): List<File> {
             emptyList()
         }
 
-        (imageFiles + pdfFiles).sortedByDescending { it.lastModified() }
+        val docxFiles = if (docxDir.exists()) {
+            docxDir.listFiles { file ->
+                file.isFile && file.extension.lowercase() == "docx"
+            }?.toList() ?: emptyList()
+        } else {
+            emptyList()
+        }
+
+        (imageFiles + pdfFiles + docxFiles).sortedByDescending { it.lastModified() }
     }
 }
