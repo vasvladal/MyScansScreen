@@ -182,16 +182,16 @@
     <string name="scan_some_documents_to_get_started">Відскануйте кілька документів, щоб почати</string>
     <string name="reorder_your_scans">Змініть порядок ваших сканувань</string>
     <string name="long_press_and_drag_to_reorder_tap_to_view_full_size_long_press_delete_button_to_remove">• Довге натискання та перетягування для зміни порядку\n• Натисніть, щоб переглянути повний розмір\n• Довге натискання кнопки видалення для видалення</string>
-    <string name="are_you_sure_you_want_to_delete_this_action_cannot_be_undone">Ви впевнені, що хочете видалити \"%1$s\"?\n\nЦю дію не можна скасувати.
+    <string name="are_you_sure_you_want_to_delete_this_action_cannot_be_undone">Ви впевнені, що хочете видалити \"%1$s\"?\n\nЦю дію не можна скасувати.</string>
 
-        <!-- DOCX Operations -->
-    <string name="create_docx">Створити DOCX</string>
+    <!-- DOCX Operations -->
+    <string name="create_docx" >Створити DOCX</string>
     <string name="create_docx_confirmation">Створити DOCX з</string>
-    <string name="docx_saved">DOCX збережено у:</string>
+    <string name="docx_saved">DOCX збережено до:</string>
     <string name="docx_failed">Не вдалося створити DOCX</string>
-    <string name="export_docx">Експортувати у DOCX</string>
+    <string name="export_docx">Експорт як DOCX</string>
     <string name="docx_created">DOCX успішно створено</string>
     <string name="creating_docx">Створення DOCX…</string>
     <string name="docx_document">Документ DOCX</string>
 
-    </string></resources>
+    </resources>

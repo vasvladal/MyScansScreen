@@ -182,16 +182,16 @@
     <string name="scan_some_documents_to_get_started">Отсканируйте несколько документов, чтобы начать</string>
     <string name="reorder_your_scans">Измените порядок ваших сканирований</string>
     <string name="long_press_and_drag_to_reorder_tap_to_view_full_size_long_press_delete_button_to_remove">• Долгое нажатие и перетаскивание для изменения порядка\n• Нажмите, чтобы просмотреть в полном размере\n• Долгое нажатие кнопки удаления для удаления</string>
-    <string name="are_you_sure_you_want_to_delete_this_action_cannot_be_undone">Вы уверены, что хотите удалить \"%1$s\"?\n\nЭто действие нельзя отменить.
+    <string name="are_you_sure_you_want_to_delete_this_action_cannot_be_undone">Вы уверены, что хотите удалить \"%1$s\"?\n\nЭто действие нельзя отменить.</string>
 
-        <!-- DOCX Operations -->
+    <!-- DOCX Operations -->
     <string name="create_docx">Создать DOCX</string>
     <string name="create_docx_confirmation">Создать DOCX из</string>
-    <string name="docx_saved">DOCX сохранён в:</string>
+    <string name="docx_saved">DOCX сохранен в:</string>
     <string name="docx_failed">Не удалось создать DOCX</string>
-    <string name="export_docx">Экспортировать в DOCX</string>
+    <string name="export_docx">Экспорт в DOCX</string>
     <string name="docx_created">DOCX успешно создан</string>
     <string name="creating_docx">Создание DOCX…</string>
     <string name="docx_document">Документ DOCX</string>
 
-    </string></resources>
+    </resources>

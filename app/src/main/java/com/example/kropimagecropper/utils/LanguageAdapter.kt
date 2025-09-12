@@ -19,7 +19,7 @@ class LanguageAdapter(
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
         val view = convertView ?: LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_language, parent, false)
+            .inflate(R.layout.ui_component_language_item, parent, false)
 
         val language = getItem(position)
         view.apply {

@@ -186,7 +186,7 @@
 
 
     <!-- DOCX Operations -->
-    <string name="create_docx">Creează DOCX</string>
+    <string name="create_docx" >Creează DOCX</string>
     <string name="create_docx_confirmation">Creează DOCX din</string>
     <string name="docx_saved">DOCX salvat în:</string>
     <string name="docx_failed">Nu s-a putut crea DOCX</string>
@@ -194,4 +194,5 @@
     <string name="docx_created">DOCX creat cu succes</string>
     <string name="creating_docx">Se creează DOCX…</string>
     <string name="docx_document">Document DOCX</string>
+
 </resources>
