@@ -34,6 +34,7 @@ import com.example.kropimagecropper.R
 import com.example.kropimagecropper.utils.CustomPoint
 import com.example.kropimagecropper.utils.OpenCVPerspectiveCorrector
 import com.example.kropimagecropper.utils.PerspectivePoints
+import com.example.kropimagecropper.ui.components.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -43,8 +44,7 @@ import kotlin.math.sqrt
 @Composable
 fun PerspectiveCorrectionScreen(
     imageUri: Uri,
-    onResult: (Bitmap) -> Unit
-    ,
+    onResult: (Bitmap) -> Unit,
     onCancel: () -> Unit
 ) {
     val context = LocalContext.current
@@ -119,7 +119,7 @@ fun PerspectiveCorrectionScreen(
                         )
 
                         withContext(Dispatchers.Main) {
-                            correctedBitmap = correctedAndroidBitmap.asImageBitmap()
+                            correctedBitmap = correctedAndroidBitmap?.asImageBitmap()
                             isProcessing = false
                         }
                     }
@@ -130,6 +130,8 @@ fun PerspectiveCorrectionScreen(
                     }
                 }
             }
+        } ?: run {
+            errorMessage = "No image available for correction"
         }
     }
 
@@ -163,11 +165,14 @@ fun PerspectiveCorrectionScreen(
                     }
                 }
             }
+        } ?: run {
+            errorMessage = "No image available for auto-detection"
         }
     }
 
     // Helper function to calculate scale
     fun calculateScale(container: IntSize, image: IntSize): Float {
+        if (image.width == 0 || image.height == 0) return 1f
         val widthScale = container.width / image.width.toFloat()
         val heightScale = container.height / image.height.toFloat()
         return minOf(widthScale, heightScale)
@@ -225,23 +230,10 @@ fun PerspectiveCorrectionScreen(
 
             // Processing indicator
             if (isProcessing) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(stringResource(R.string.processing_perspective_correction))
-                    }
-                }
+                ProcessingIndicator(
+                    text = stringResource(R.string.processing_perspective_correction),
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             // Image display area
@@ -260,12 +252,14 @@ fun PerspectiveCorrectionScreen(
                     ) {
                         if (correctedBitmap != null) {
                             // Show corrected image
-                            Image(
-                                bitmap = correctedBitmap!!,
-                                contentDescription = stringResource(R.string.corrected_image),
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Fit
-                            )
+                            correctedBitmap?.let { nonNullBitmap ->
+                                Image(
+                                    bitmap = nonNullBitmap,
+                                    contentDescription = stringResource(R.string.corrected_image),
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Fit
+                                )
+                            }
                         } else {
                             // Show original image with corner points overlay
                             Box(modifier = Modifier.fillMaxSize()) {
@@ -363,6 +357,27 @@ fun PerspectiveCorrectionScreen(
                         }
                     }
                 }
+            } ?: run {
+                // Show placeholder when no image is available
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(bottom = 16.dp),
+                    elevation = CardDefaults.cardElevation(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = stringResource(R.string.loading_image),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
             }
 
             // Control buttons
@@ -371,58 +386,50 @@ fun PerspectiveCorrectionScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (correctedBitmap == null) {
-                    OutlinedButton(
+                    AppSmallButton(
                         onClick = { autoDetectCorners() },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(Icons.Default.AutoFixHigh, null, Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.auto_correct))
-                    }
-
-                    OutlinedButton(
-                        onClick = { resetPoints() },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(Icons.Default.Refresh, null, Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.reset))
-                    }
-
-                    Button(
-                        onClick = { applyCorrection() },
+                        text = stringResource(R.string.auto_correct),
+                        icon = Icons.Default.AutoFixHigh,
                         modifier = Modifier.weight(1f),
-                        enabled = !isProcessing
-                    ) {
-                        Icon(Icons.Default.Check, null, Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.apply))
-                    }
+                        enabled = originalBitmap != null
+                    )
+
+                    AppSmallButton(
+                        onClick = { resetPoints() },
+                        text = stringResource(R.string.reset),
+                        icon = Icons.Default.Refresh,
+                        modifier = Modifier.weight(1f),
+                        enabled = originalBitmap != null
+                    )
+
+                    AppSmallButton(
+                        onClick = { applyCorrection() },
+                        text = stringResource(R.string.apply),
+                        icon = Icons.Default.Check,
+                        modifier = Modifier.weight(1f),
+                        enabled = !isProcessing && originalBitmap != null
+                    )
                 } else {
-                    OutlinedButton(
+                    AppSmallButton(
                         onClick = {
                             correctedBitmap = null
                             errorMessage = null
                         },
+                        text = stringResource(R.string.edit_again),
+                        icon = Icons.Default.Edit,
                         modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(Icons.Default.Edit, null, Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.edit_again))
-                    }
+                    )
 
-                    Button(
+                    AppSmallButton(
                         onClick = {
                             correctedBitmap?.let { bitmap ->
                                 onResult(bitmap.asAndroidBitmap())
                             }
                         },
+                        text = stringResource(R.string.save),
+                        icon = Icons.Default.Save,
                         modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(Icons.Default.Save, null, Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.save))
-                    }
+                    )
                 }
             }
 

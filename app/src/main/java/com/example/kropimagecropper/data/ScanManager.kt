@@ -103,11 +103,14 @@ object ScanManager {
      */
     suspend fun saveCroppedImage(context: Context, croppedUri: Uri): Boolean {
         return withContext(Dispatchers.IO) {
+            var bitmap: Bitmap? = null
             try {
                 val inputStream = context.contentResolver.openInputStream(croppedUri)
                     ?: return@withContext false
 
-                val bitmap = BitmapFactory.decodeStream(inputStream)
+                // Decode the bitmap
+                val options = BitmapFactory.Options()
+                bitmap = BitmapFactory.decodeStream(inputStream, null, options)
                 inputStream.close()
 
                 if (bitmap == null) return@withContext false
@@ -120,7 +123,6 @@ object ScanManager {
                 val outputStream = FileOutputStream(scanFile)
                 val success = bitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
                 outputStream.close()
-                bitmap.recycle()
 
                 if (success && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     // Add to MediaStore for visibility in gallery
@@ -131,6 +133,9 @@ object ScanManager {
             } catch (e: Exception) {
                 e.printStackTrace()
                 false
+            } finally {
+                // Always recycle the bitmap to free memory
+                bitmap?.recycle()
             }
         }
     }
@@ -222,14 +227,23 @@ object ScanManager {
      * Copy URI content to a temporary file for better compatibility
      */
     fun copyUriToTempFile(context: Context, uri: Uri): Uri? {
+        var bitmap: Bitmap? = null
         return try {
             val tempDir = getTempDirectory(context)
             val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
             val tempFile = File(tempDir, "COPY_$timeStamp.jpg")
 
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                // Decode the bitmap with options to prevent memory issues
+                val options = BitmapFactory.Options().apply {
+                    inSampleSize = 2 // Reduce memory usage by sampling
+                }
+                bitmap = BitmapFactory.decodeStream(inputStream, null, options)
+            }
+
+            if (bitmap != null) {
                 FileOutputStream(tempFile).use { outputStream ->
-                    inputStream.copyTo(outputStream)
+                    bitmap!!.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
                 }
             }
 
@@ -246,25 +260,36 @@ object ScanManager {
             println("DEBUG: Error copying URI to temp file: ${e.message}")
             e.printStackTrace()
             null
+        } finally {
+            // Always recycle the bitmap to free memory
+            bitmap?.recycle()
         }
     }
 
     suspend fun saveCorrectedImage(context: Context, bitmap: Bitmap): String {
         return withContext(Dispatchers.IO) {
-            val scansDir = getScansDirectory(context)
-            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            val fileName = "SCAN_$timeStamp.jpg"
-            val scanFile = File(scansDir, fileName)
+            try {
+                val scansDir = getScansDirectory(context)
+                val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                val fileName = "SCAN_$timeStamp.jpg"
+                val scanFile = File(scansDir, fileName)
 
-            FileOutputStream(scanFile).use { outputStream ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
+                FileOutputStream(scanFile).use { outputStream ->
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
+                }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    addToMediaStore(context, scanFile)
+                }
+
+                scanFile.absolutePath
+            } finally {
+                // Recycle the bitmap if we're done with it
+                // Note: Only recycle if this is the last use of this bitmap
+                if (!bitmap.isRecycled) {
+                    bitmap.recycle()
+                }
             }
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                addToMediaStore(context, scanFile)
-            }
-
-            scanFile.absolutePath
         }
     }
 }

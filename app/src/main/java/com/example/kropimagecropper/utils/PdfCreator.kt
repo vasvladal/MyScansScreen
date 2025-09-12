@@ -8,6 +8,7 @@ import android.graphics.BitmapFactory
 import android.graphics.pdf.PdfDocument
 import android.os.Build
 import android.os.Environment
+import android.widget.Toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -71,6 +72,7 @@ object PdfCreator {
                 e.printStackTrace()
                 withContext(Dispatchers.Main) {
                     onResult(false, null)
+                    Toast.makeText(context, "Failed to export PDF", Toast.LENGTH_SHORT).show()
                 }
             }
         }

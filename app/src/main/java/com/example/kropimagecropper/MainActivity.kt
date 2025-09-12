@@ -35,6 +35,7 @@ import com.example.kropimagecropper.navigation.Navigation
 import com.example.kropimagecropper.ui.theme.KropImageCropperTheme
 import com.example.kropimagecropper.utils.AppInfo
 import com.example.kropimagecropper.utils.LanguageUtils
+import com.example.kropimagecropper.ui.components.*
 import io.noties.markwon.Markwon
 import kotlinx.io.IOException
 import android.widget.TextView
@@ -183,47 +184,23 @@ class MainActivity : ComponentActivity() {
                                                 )
                                         ) {
                                             // Language option
-                                            DropdownMenuItem(
-                                                text = {
-                                                    Text(
-                                                        stringResource(R.string.language),
-                                                        fontWeight = FontWeight.Medium
-                                                    )
-                                                },
+                                            AppDropdownMenuItem(
+                                                text = stringResource(R.string.language),
+                                                icon = Icons.Default.Language,
                                                 onClick = {
                                                     showMenu = false
                                                     showLanguageDialog = true
-                                                },
-                                                leadingIcon = {
-                                                    Icon(
-                                                        Icons.Default.Language,
-                                                        contentDescription = null,
-                                                        tint = MaterialTheme.colorScheme.primary
-                                                    )
-                                                },
-                                                modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                                                }
                                             )
 
                                             // About option
-                                            DropdownMenuItem(
-                                                text = {
-                                                    Text(
-                                                        stringResource(R.string.about),
-                                                        fontWeight = FontWeight.Medium
-                                                    )
-                                                },
+                                            AppDropdownMenuItem(
+                                                text = stringResource(R.string.about),
+                                                icon = Icons.Default.Info,
                                                 onClick = {
                                                     showMenu = false
                                                     showAboutDialog = true
-                                                },
-                                                leadingIcon = {
-                                                    Icon(
-                                                        Icons.Default.Info,
-                                                        contentDescription = null,
-                                                        tint = MaterialTheme.colorScheme.primary
-                                                    )
-                                                },
-                                                modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                                                }
                                             )
                                         }
                                     }

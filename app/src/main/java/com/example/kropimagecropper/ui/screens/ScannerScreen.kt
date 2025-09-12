@@ -40,6 +40,7 @@ import com.example.kropimagecropper.R
 import com.example.kropimagecropper.data.ScanManager
 import com.example.kropimagecropper.utils.OpenCVPerspectiveCorrector
 import com.example.kropimagecropper.utils.CustomPoint
+import com.example.kropimagecropper.utils.PermissionUtils
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
@@ -113,21 +114,7 @@ fun ScannerScreen(
     val cameraPermission = rememberPermissionState(permission = Manifest.permission.CAMERA)
 
     // Media permissions based on Android version
-    val mediaPermissions = when {
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
-            listOf(
-                Manifest.permission.READ_MEDIA_IMAGES,
-                Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
-            )
-        }
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
-            listOf(Manifest.permission.READ_MEDIA_IMAGES)
-        }
-        else -> {
-            listOf(Manifest.permission.READ_EXTERNAL_STORAGE)
-        }
-    }
-
+    val mediaPermissions = PermissionUtils.getMediaPermissions()
     val mediaPermissionsState = rememberMultiplePermissionsState(permissions = mediaPermissions)
 
     // Write permission for Android 10 and below
@@ -203,6 +190,9 @@ fun ScannerScreen(
                             isProcessing = false
                             Toast.makeText(context, R.string.operation_successful, Toast.LENGTH_SHORT).show()
                         }
+
+                        // Recycle the original bitmap to free memory
+                        originalBitmap.recycle()
                     } else {
                         withContext(Dispatchers.Main) {
                             saveError = context.getString(R.string.operation_failed)
@@ -227,32 +217,39 @@ fun ScannerScreen(
         scope.launch {
             isProcessing = true
             try {
-                val result = imageCropper.crop(uri, context)
+                // Move cropping to IO dispatcher
+                val result = withContext(Dispatchers.IO) {
+                    imageCropper.crop(uri, context)
+                }
 
-                when (result) {
-                    is CropResult.Success -> {
-                        croppedImage = result.bitmap
-                        selectedImageUri = null
-                        showCropOptions = false
-                        isProcessing = false
-                    }
-                    is CropResult.Cancelled -> {
-                        selectedImageUri = null
-                        showCropOptions = false
-                        isProcessing = false
-                    }
-                    is CropError -> {
-                        selectedImageUri = null
-                        showCropOptions = false
-                        isProcessing = false
-                        saveError = cropErrorString
+                withContext(Dispatchers.Main) {
+                    when (result) {
+                        is CropResult.Success -> {
+                            croppedImage = result.bitmap
+                            selectedImageUri = null
+                            showCropOptions = false
+                            isProcessing = false
+                        }
+                        is CropResult.Cancelled -> {
+                            selectedImageUri = null
+                            showCropOptions = false
+                            isProcessing = false
+                        }
+                        is CropError -> {
+                            selectedImageUri = null
+                            showCropOptions = false
+                            isProcessing = false
+                            saveError = cropErrorString
+                        }
                     }
                 }
             } catch (e: Exception) {
-                selectedImageUri = null
-                showCropOptions = false
-                isProcessing = false
-                saveError = "${cropErrorString}: ${e.message ?: context.getString(R.string.operation_failed)}"
+                withContext(Dispatchers.Main) {
+                    selectedImageUri = null
+                    showCropOptions = false
+                    isProcessing = false
+                    saveError = "${cropErrorString}: ${e.message ?: context.getString(R.string.operation_failed)}"
+                }
             }
         }
     }
@@ -308,6 +305,9 @@ fun ScannerScreen(
                                 saveLocation = null
                             }
                         }
+
+                        // Recycle the bitmap to free memory
+                        bitmap.recycle()
                     }
                 }
             } catch (e: Exception) {
@@ -326,38 +326,47 @@ fun ScannerScreen(
     LaunchedEffect(selectedImageUri) {
         selectedImageUri?.let { uri ->
             try {
-                kotlinx.coroutines.delay(1500)
+                withContext(Dispatchers.IO) {
+                    kotlinx.coroutines.delay(1500)
 
-                var isValid = false
-                var attempts = 0
-                while (!isValid && attempts < 5) {
-                    isValid = ScanManager.isValidImageUri(context, uri)
+                    var isValid = false
+                    var attempts = 0
+                    while (!isValid && attempts < 5) {
+                        isValid = ScanManager.isValidImageUri(context, uri)
+                        if (!isValid) {
+                            kotlinx.coroutines.delay(1000)
+                            attempts++
+                        }
+                    }
+
                     if (!isValid) {
-                        kotlinx.coroutines.delay(1000)
-                        attempts++
+                        withContext(Dispatchers.Main) {
+                            selectedImageUri = null
+                            saveError = context.getString(R.string.operation_failed)
+                            scope.launch {
+                                kotlinx.coroutines.delay(3000)
+                                saveError = null
+                            }
+                        }
+                        return@withContext
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        showCropOptions = true
                     }
                 }
-
-                if (!isValid) {
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
                     selectedImageUri = null
-                    saveError = context.getString(R.string.operation_failed)
+                    saveError = "${context.getString(R.string.operation_failed)}: ${e.message}"
                     scope.launch {
                         kotlinx.coroutines.delay(3000)
                         saveError = null
                     }
-                    return@let
-                }
-
-                showCropOptions = true
-            } catch (e: Exception) {
-                selectedImageUri = null
-                saveError = "${context.getString(R.string.operation_failed)}: ${e.message}"
-                scope.launch {
-                    kotlinx.coroutines.delay(3000)
-                    saveError = null
                 }
             }
         }
+
     }
 
     Scaffold(
@@ -532,17 +541,6 @@ fun ScannerScreen(
                                 }
                             }
                         }
-//                        },
-//                        dismissButton = {
-//                            TextButton(
-//                                onClick = {
-//                                    showCropOptions = false
-//                                    selectedImageUri = null
-//                                }
-//                            ) {
-//                                Text(cancelText)
-//                            }
-//                        }
                     )
                 }
 
@@ -635,7 +633,7 @@ fun ScannerScreen(
                                 Button(
                                     onClick = {
                                         if (needsWritePermission()) {
-                                            writePermissionState.launchPermissionRequest()
+                                            PermissionUtils.requestWritePermission(writePermissionState)
                                         } else {
                                             saveImageToScans()
                                         }
@@ -725,8 +723,9 @@ fun ScannerScreen(
                             // Camera button
                             Button(
                                 onClick = {
-                                    when {
-                                        cameraPermission.status.isGranted -> {
+                                    PermissionUtils.handleCameraPermission(
+                                        cameraPermission = cameraPermission,
+                                        onPermissionGranted = {
                                             try {
                                                 ScanManager.cleanupTempFiles(context)
                                                 val tempUri = ScanManager.createTempImageUri(context)
@@ -748,10 +747,7 @@ fun ScannerScreen(
                                                 }
                                             }
                                         }
-                                        else -> {
-                                            cameraPermission.launchPermissionRequest()
-                                        }
-                                    }
+                                    )
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -766,8 +762,9 @@ fun ScannerScreen(
                             // Gallery button
                             OutlinedButton(
                                 onClick = {
-                                    when {
-                                        mediaPermissionsState.allPermissionsGranted -> {
+                                    PermissionUtils.handleMediaPermissions(
+                                        mediaPermissionsState = mediaPermissionsState,
+                                        onPermissionGranted = {
                                             try {
                                                 galleryLauncher.launch("image/*")
                                             } catch (e: Exception) {
@@ -778,10 +775,7 @@ fun ScannerScreen(
                                                 }
                                             }
                                         }
-                                        else -> {
-                                            mediaPermissionsState.launchMultiplePermissionRequest()
-                                        }
-                                    }
+                                    )
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()

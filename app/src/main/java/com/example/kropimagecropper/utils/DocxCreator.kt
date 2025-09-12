@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Environment
+import android.widget.Toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -83,6 +84,7 @@ object DocxCreator {
                 e.printStackTrace()
                 withContext(Dispatchers.Main) {
                     onResult(false, null)
+                    Toast.makeText(context, "Failed to export DOCX", Toast.LENGTH_SHORT).show()
                 }
             }
         }
