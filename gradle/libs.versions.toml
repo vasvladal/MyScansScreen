@@ -2,18 +2,19 @@
 [versions]
 # Kotlin & Compose
 coil-compose = "2.7.0"
-compose-bom-version = "2025.08.01"
+compose-bom-version = "2025.09.00"
 fragment-ktx = "1.8.9"
+gpuimage = "2.1.0"
 image = "4.6.2"
 kotlin = "2.2.10"
-compose-bom = "2025.08.01"
+compose-bom = "2025.09.00"
 compose-compiler = "1.5.8"
 
 # Android
 android-gradle-plugin = "8.13.0"
 android-core-ktx = "1.17.0"
 android-lifecycle = "2.9.3"
-android-activity-compose = "1.10.1"
+android-activity-compose = "1.11.0"
 
 # KROP LIBRARY - FIXED VERSION AND COMPLETE SETUP
 krop = "0.2.0"
@@ -29,13 +30,13 @@ junit = "4.13.2"
 androidx-test-ext-junit = "1.3.0"
 espresso-core = "3.7.0"
 material3 = "1.3.2"
-navigation-fragment-ktx = "2.9.3"
-navigation-ui-ktx = "2.9.3"
+navigation-fragment-ktx = "2.9.4"
+navigation-ui-ktx = "2.9.4"
 opencvVersion = "4.12.0"
 poi = "5.2.3"
 poiOoxml = "5.2.3"
 reorderable = "0.9.6"
-navigation-compose = "2.9.3"
+navigation-compose = "2.9.4"
 compileSdk = "36"
 
 profileinstaller = "1.4.1"
@@ -52,7 +53,27 @@ auto-value = "1.10.4"
 # UI Automator for testing (alternative to appcrawler)
 uiautomator = "2.3.0"
 
+# Consider lighter alternatives
+# gpuimage = "2.1.0"  # Alternative to OpenCV for basic image processing
+# Add these versions for size optimization
+compress = "2.3.0"
+image-compressor = "3.0.1"
+
 [libraries]
+# Replace OpenCV with a lighter image processing library
+# OpenCV is very large (~43MB), consider using alternatives
+image-processing = { group = "com.waynejo", name = "androidndkgif", version = "0.3.3" }
+
+# Use lightweight Excel library instead of full POI if possible
+lightweight-excel = { group = "com.github.andruhon", name = "android5xlsx", version = "1.0.4" }
+
+# Add image compression library
+image-compressor = { group = "id.zelory", name = "compressor", version.ref = "image-compressor" }
+
+# Add file compression library
+compress = { group = "com.iceteck.silicompressorr", name = "silicompressor", version.ref = "compress" }
+
+
 # Android Core
 android-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "android-core-ktx" }
 android-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "android-lifecycle" }
@@ -79,6 +100,7 @@ compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 
 # KROP LIBRARY DEPENDENCIES - COMPLETE AND FIXED
+gpuimage = { module = "jp.co.cyberagent.android:gpuimage", version.ref = "gpuimage" }
 image = { module = "io.noties.markwon:image", version.ref = "image" }
 krop-ui = { group = "com.attafitamim.krop", name = "ui", version.ref = "krop" }
 krop-core = { group = "com.attafitamim.krop", name = "core", version.ref = "krop" }
@@ -131,6 +153,8 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 
 [bundles]
+# Create a lightweight image processing bundle
+lightweight-image = ["image-processing", "image-compressor", "compress"]
 # KROP BUNDLE - COMPLETE WITH ALL NECESSARY DEPENDENCIES
 krop = ["krop-ui", "krop-core", "krop-extensions-filekit"]
 

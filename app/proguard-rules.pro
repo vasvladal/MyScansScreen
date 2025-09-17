@@ -1,5 +1,15 @@
 # Add project specific ProGuard rules here.
+# General POI compatibility rules for Android
+-dontwarn java.awt.**
+-dontwarn javax.xml.stream.**
+-dontwarn org.apache.xmlgraphics.**
+-dontwarn org.apache.batik.**
+-dontwarn org.openxmlformats.schemas.**
 
+# Keep essential POI classes
+-keep class org.apache.poi.** { *; }
+-keep class org.openxmlformats.schemas.** { *; }
+-keep class schemasMicrosoftComOffice.** { *; }
 # Keep annotation classes
 -keep class javax.annotation.** { *; }
 -keep class org.jetbrains.annotations.** { *; }
@@ -154,7 +164,6 @@
     public <init>();
     public <init>(...);
     public *** createParagraph();
-    #noinspection ShrinkerUnresolvedReference
     public void write(...);
     public void close();
     public static *** PICTURE_TYPE_JPEG;
@@ -172,7 +181,6 @@
     public void setFontSize(...);
     public void setItalic(...);
     public void setBold(...);
-    #noinspection ShrinkerUnresolvedReference
     public void addPicture(...);
     public void addBreak();
     public void setColor(...);
@@ -182,7 +190,6 @@
     public static *** CENTER;
     public static *** LEFT;
     public static *** RIGHT;
-    #noinspection ShrinkerUnresolvedReference
     public static *** JUSTIFY;
 }
 
@@ -255,3 +262,62 @@
 -dontwarn org.apache.poi.hdgf.**
 -dontwarn org.apache.poi.hpbf.**
 -dontwarn org.apache.poi.hmef.**
+
+# ===============================================
+# SIZE OPTIMIZATION RULES
+# ===============================================
+
+# Enable aggressive optimization
+-optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
+-optimizationpasses 5
+-allowaccessmodification
+-dontpreverify
+
+# Remove logging in release builds (significant size reduction)
+-assumenosideeffects class android.util.Log {
+    public static boolean isLoggable(java.lang.String, int);
+    public static int v(...);
+    public static int i(...);
+    public static int w(...);
+    public static int d(...);
+    public static int e(...);
+}
+
+# Remove debug code
+-assumenosideeffects class * {
+    void debug*(...);
+    void trace*(...);
+}
+
+# Remove unused OpenCV modules (comment out if you need them)
+-dontwarn org.opencv.calib3d.**
+-dontwarn org.opencv.contrib.**
+-dontwarn org.opencv.features2d.**
+-dontwarn org.opencv.ml.**
+-dontwarn org.opencv.objdetect.**
+-dontwarn org.opencv.video.**
+-dontwarn org.opencv.dnn.**
+-dontwarn org.opencv.photo.**
+
+# Remove unused POI modules for DOCX-only usage
+-dontwarn org.apache.poi.hssf.**     # Excel .xls support
+-dontwarn org.apache.poi.xssf.**     # Excel .xlsx support
+-dontwarn org.apache.poi.hwpf.**     # Word .doc support
+-dontwarn org.apache.poi.hslf.**     # PowerPoint support
+-dontwarn org.apache.poi.hdgf.**     # Visio support
+-dontwarn org.apache.poi.hpbf.**     # Publisher support
+
+# Remove unused Markwon modules
+-dontwarn io.noties.markwon.ext.**
+-dontwarn io.noties.markwon.image.**
+-dontwarn io.noties.markwon.linkify.**
+-dontwarn io.noties.markwon.recycler.**
+
+# Kotlin optimization
+-dontwarn kotlinx.coroutines.debug.**
+-dontwarn kotlinx.serialization.**
+
+# Remove unused resources
+-keepclassmembers class **.R$* {
+    public static <fields>;
+}

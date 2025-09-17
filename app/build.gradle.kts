@@ -1,7 +1,6 @@
 @file:Suppress("UnstableApiUsage")
 import java.util.Properties
 import java.io.FileInputStream
-import org.gradle.api.tasks.Exec
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -21,25 +20,9 @@ keystoreProperties.apply {
 }
 
 val versionPropsFile = file("version.properties")
-
-println("Version Properties File Path: ${versionPropsFile.absolutePath}")
-println("Version Properties File Exists: ${versionPropsFile.exists()}")
-println("Version Properties File Can Read: ${versionPropsFile.canRead()}")
-
-if (versionPropsFile.exists()) {
-    println("Version Properties File Contents:")
-    try {
-        println(versionPropsFile.readText())
-    } catch (e: Exception) {
-        println("Error reading file: ${e.message}")
-    }
-}
-
 val versionProps = Properties().apply {
     if (versionPropsFile.canRead()) {
         load(FileInputStream(versionPropsFile))
-    } else {
-        println("Cannot read version properties file!")
     }
 }
 
@@ -50,25 +33,12 @@ val versionBuild = versionProps.getProperty("VERSION_BUILD", "1").toInt()
 
 // Create the version name strings
 val appVersionName = "$versionMajor.$versionMinor.$versionPatch.$versionBuild"
-val appVersionNameFull = "$versionMajor.$versionMinor.$versionPatch.$versionBuild"
 val appVersionCode = versionMajor * 10000 + versionMinor * 1000 + versionPatch * 100 + versionBuild
-
-println("Generated versionName: $appVersionName")
-println("Generated versionCode: $appVersionCode")
 
 // Copy version.properties to app assets
 tasks.register<Copy>("copyVersionProperties") {
     from(versionPropsFile)
     into("src/main/assets")
-    doLast {
-        println("Copied version.properties to assets folder")
-        val copiedFile = file("src/main/assets/version.properties")
-        if (copiedFile.exists()) {
-            println("Copied file contents: ${copiedFile.readText()}")
-        } else {
-            println("WARNING: Copied file not found!")
-        }
-    }
 }
 
 android {
@@ -88,25 +58,21 @@ android {
         }
 
         buildConfigField("String", "VERSION_NAME", "\"$appVersionName\"")
-        buildConfigField("String", "VERSION_NAME_FULL", "\"$appVersionNameFull\"")
         buildConfigField("int", "VERSION_CODE", "$appVersionCode")
         buildConfigField("String", "BUILD_DATE", "\"${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}\"")
+
+        // Limit to specific ABIs to reduce APK size
+        ndk {
+            abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a"))
+        }
     }
 
     signingConfigs {
         create("release") {
             storeFile = keystoreProperties["storeFile"]?.let { file(it as String) }
-
-            storePassword = System.getenv("KEYSTORE_PASSWORD")
-                ?: keystoreProperties["storePassword"] as? String
-                        ?: error("Keystore password not found")
-
-            keyAlias = keystoreProperties["keyAlias"] as? String
-                ?: error("Key alias not found")
-
-            keyPassword = System.getenv("KEY_PASSWORD")
-                ?: keystoreProperties["keyPassword"] as? String
-                        ?: error("Key password not found")
+            storePassword = keystoreProperties["storePassword"] as? String ?: ""
+            keyAlias = keystoreProperties["keyAlias"] as? String ?: ""
+            keyPassword = keystoreProperties["keyPassword"] as? String ?: ""
         }
     }
 
@@ -114,16 +80,11 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-
             signingConfig = signingConfigs.getByName("release")
-
-            // Additional R8 configuration to be less aggressive
-            proguardFiles.add(file("proguard-rules.pro"))
         }
         debug {
             isMinifyEnabled = false
@@ -132,22 +93,13 @@ android {
         }
     }
 
-    // Add this section to configure R8 more explicitly
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
-        isCoreLibraryDesugaringEnabled = false // Disable if not needed
-    }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
 
     kotlin {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
-        }
+        jvmToolchain(21)
     }
 
     buildFeatures {
@@ -163,7 +115,6 @@ android {
     packaging {
         resources {
             excludes += setOf(
-                // Standard META-INF exclusions
                 "META-INF/NOTICE.md",
                 "META-INF/LICENSE.md",
                 "META-INF/DEPENDENCIES",
@@ -172,27 +123,19 @@ android {
                 "META-INF/LGPL2.1",
                 "META-INF/NOTICE",
                 "META-INF/LICENSE.txt",
-                "META-INF/NOTICE.txt"
-            )
-
-            merges += setOf(
-                "META-INF/LICENSE",
-                "META-INF/NOTICE"
+                "META-INF/NOTICE.txt",
+                "**/x86/libopencv_java4.so",
+                "**/x86_64/libopencv_java4.so"
             )
 
             pickFirsts += setOf(
-                // Kotlin conflicts resolution
-                "kotlin/reflect/reflect.kotlin_builtins",
-                "kotlin/coroutines/jvm/internal/SpillingKt.class",
-                "kotlin/text/LinesIterator.class",
-                "kotlin/text/LinesIterator\$State.class",
-                "kotlin/text/StringsKt__StringsKt\$lineSequence\$\$inlined\$Sequence\$1.class",
-                "kotlin/uuid/UuidSerialized.class",
-                "kotlin/uuid/UuidSerialized\$Companion.class"
+                "**/libc++_shared.so",
+                "**/libopencv_java4.so"
             )
         }
     }
 
+    // Configure APK naming
     applicationVariants.all {
         val variant = this
         val buildType = variant.buildType.name
@@ -204,25 +147,18 @@ android {
             val output = this
             val projectName = "DocumentScanner"
 
-            when (output) {
-                is com.android.build.gradle.internal.api.ApkVariantOutputImpl -> {
-                    output.outputFileName = "${projectName}_${flavorName}${version}_${variant.versionCode}_${buildType}_${date}.apk"
-                }
+            if (output is com.android.build.gradle.internal.api.ApkVariantOutputImpl) {
+                output.outputFileName = "${projectName}_${flavorName}${version}_${variant.versionCode}_${buildType}_${date}.apk"
             }
         }
     }
 }
 
-// Simplified and clean dependency resolution strategy
 configurations.all {
     resolutionStrategy {
         // Force consistent versions only where necessary
-        force("org.jetbrains.kotlin:kotlin-stdlib:2.2.10")
-        force("org.jetbrains.kotlin:kotlin-reflect:2.2.10")
-        force(libs.jetbrains.annotations)
-
-        // Prefer project modules
-        preferProjectModules()
+        force("org.jetbrains.kotlin:kotlin-stdlib:${libs.versions.kotlin.get()}")
+        force("org.jetbrains.kotlin:kotlin-reflect:${libs.versions.kotlin.get()}")
     }
     // Exclude the conflicting annotations-java5 module
     exclude(group = "org.jetbrains", module = "annotations-java5")
@@ -253,20 +189,11 @@ dependencies {
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
-    // Concurrent Futures
-    implementation(libs.androidx.concurrent.futures)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.constraintlayout.core)
-
-    // Testing (including UI Automator as appcrawler alternative)
+    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(platform(libs.compose.bom))
-    androidTestImplementation(libs.bundles.android.testing)
-
-    // UI Automator for automated UI testing (replaces appcrawler functionality)
-    androidTestImplementation(libs.androidx.test.uiautomator)
 
     // Debug
     debugImplementation(libs.bundles.debug.testing)
@@ -280,9 +207,6 @@ dependencies {
     implementation(libs.markwon.html) {
         exclude(group = "org.jetbrains", module = "annotations")
     }
-    implementation(libs.markwon.syntax) {
-        exclude(group = "org.jetbrains", module = "annotations")
-    }
 
     // OpenCV with exclusion
     implementation(libs.opencv.opencv) {
@@ -291,9 +215,10 @@ dependencies {
 
     implementation(libs.poi)
     implementation(libs.poi.ooxml)
+    implementation(libs.gpuimage)
 }
 
-// Simplified task for version management
+// Version increment task
 tasks.register("incrementVersionCode") {
     doLast {
         if (gradle.startParameter.taskNames.any { it.contains("assembleRelease") }) {
@@ -307,21 +232,11 @@ tasks.register("incrementVersionCode") {
     }
 }
 
-// Simple dependency analysis task
-tasks.register("checkDependencies") {
-    doLast {
-        println("=== Clean Build Dependencies ===")
-        println("AppCrawler removed - using UI Automator for testing")
-        println("All annotation conflicts resolved")
-        println("Build should now be clean!")
-    }
-}
-
 tasks.named("preBuild") {
     dependsOn("copyVersionProperties")
-    dependsOn("checkDependencies")
 }
 
+// Connect version increment to release build
 afterEvaluate {
     tasks.named("assembleRelease") {
         finalizedBy("incrementVersionCode")

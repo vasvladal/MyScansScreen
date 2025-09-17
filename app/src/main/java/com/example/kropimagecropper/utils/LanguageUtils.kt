@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.os.Build
-import androidx.appcompat.app.AppCompatDelegate
+//import androidx.appcompat.app.AppCompatDelegate
 import java.util.*
 
 object LanguageUtils {
@@ -87,7 +87,7 @@ object LanguageUtils {
         resources.updateConfiguration(configuration, resources.displayMetrics)
 
         // Update night mode when language changes (for RTL support)
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        //AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
     }
 
     /**
